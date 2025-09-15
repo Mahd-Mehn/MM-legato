@@ -1,0 +1,185 @@
+services:
+  # API Gateway
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - USER_SERVICE_URL=http://user-service:8002
+      - CONTENT_SERVICE_URL=http://content-service:8003
+      - IP_SERVICE_URL=http://ip-service:8004
+      - PAYMENT_SERVICE_URL=http://payment-service:8005
+      - AI_SERVICE_URL=http://ai-service:8006
+      - ANALYTICS_SERVICE_URL=http://analytics-service:8007
+      - COMMUNITY_SERVICE_URL=http://community-service:8008
+    depends_on:
+      - auth-service
+      - user-service
+      - content-service
+      - ip-service
+      - payment-service
+      - ai-service
+      - analytics-service
+      - community-service
+    networks:
+      - legato-network
+
+  # Authentication Service
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://legato_user:legato_pass@postgres:5432/legato_auth
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=your-jwt-secret-key-change-in-production
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - legato-network
+
+  # User Management Service
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://legato_user:legato_pass@postgres:5432/legato_users
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - legato-network
+
+  # Content Management Service
+  content-service:
+    build: ./services/content-service
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql://legato_user:legato_pass@postgres:5432/legato_content
+      - REDIS_URL=redis://redis:6379/2
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - legato-network
+
+  # IP Protection Service
+  ip-service:
+    build: ./services/ip-service
+    ports:
+      - "8004:8004"
+    environment:
+      - DATABASE_URL=postgresql://legato_user:legato_pass@postgres:5432/legato_ip
+      - REDIS_URL=redis://redis:6379/3
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - legato-network
+
+  # Payment Processing Service
+  payment-service:
+    build: ./services/payment-service
+    ports:
+      - "8005:8005"
+    environment:
+      - DATABASE_URL=postgresql://legato_user:legato_pass@postgres:5432/legato_payments
+      - REDIS_URL=redis://redis:6379/4
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - legato-network
+
+  # AI Enhancement Service
+  ai-service:
+    build: ./services/ai-service
+    ports:
+      - "8006:8006"
+    environment:
+      - MONGODB_URL=mongodb://legato_user:legato_pass@mongo:27017/legato_ai?authSource=admin
+      - REDIS_URL=redis://redis:6379/5
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - legato-network
+
+  # Analytics Service
+  analytics-service:
+    build: ./services/analytics-service
+    ports:
+      - "8007:8007"
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017/legato_analytics
+      - REDIS_URL=redis://redis:6379/6
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - legato-network
+
+  # Community Service
+  community-service:
+    build: ./services/community-service
+    ports:
+      - "8008:8008"
+    environment:
+      - DATABASE_URL=sqlite:///./community.db
+      - REDIS_URL=redis://redis:6379/7
+    depends_on:
+      - redis
+    networks:
+      - legato-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=legato_user
+      - POSTGRES_PASSWORD=legato_pass
+      - POSTGRES_MULTIPLE_DATABASES=legato_auth,legato_users,legato_content,legato_ip,legato_payments
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - legato-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - legato-network
+
+  # MongoDB for Analytics and AI
+  mongo:
+    image: mongo:6
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=legato_user
+      - MONGO_INITDB_ROOT_PASSWORD=legato_pass
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - legato-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongo_data:
+
+networks:
+  legato-network:
+    driver: bridge
