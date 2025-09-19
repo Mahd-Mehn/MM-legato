@@ -1,10 +1,10 @@
-# Legato Platform Design Document
+# Design Document
 
 ## Overview
 
-Legato is a mobile-first serialized storytelling platform that combines content creation, IP protection, and global monetization. The platform architecture prioritizes scalability, security, and performance while enabling writers to protect their intellectual property and reach global audiences through AI-powered content enhancement.
+Legato is a social reading and writing platform that combines content creation, consumption, and monetization in a web-first experience. The platform uses a modern architecture with Python FastAPI backend for robust API services and Next.js 14 (App Router) frontend with ShadCN UI and Tailwind CSS for a beautiful, accessible web interface.
 
-The system follows a microservices architecture with clear separation between content management, user services, payment processing, and AI integrations. This design ensures modularity, scalability, and maintainability while supporting the platform's core mission of fair writer compensation and IP protection.
+The system is designed around two primary user roles (Readers and Writers) with a focus on real-time interaction, secure payments, media handling, and IP protection. The architecture supports scalable content delivery, integrated third-party services, and comprehensive user engagement features.
 
 ## Architecture
 
@@ -13,477 +13,496 @@ The system follows a microservices architecture with clear separation between co
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        PWA[Progressive Web App]
-        Mobile[Mobile Apps]
+        A[Next.js 14 App]
+        B[ShadCN UI + Tailwind CSS]
+        C[React Query / SWR]
     end
     
     subgraph "API Gateway"
-        Gateway[API Gateway / Load Balancer]
+        D[FastAPI Backend]
+        E[Authentication Middleware]
+        F[Rate Limiting]
     end
     
     subgraph "Core Services"
-        Auth[Authentication Service]
-        User[User Management Service]
-        Content[Content Management Service]
-        IP[IP Protection Service]
-        Payment[Payment Processing Service]
-        AI[AI Enhancement Service]
-        Analytics[Analytics Service]
+        G[User Service]
+        H[Content Service]
+        I[Payment Service]
+        J[Notification Service]
+        K[Media Service]
     end
     
-    subgraph "External Integrations"
-        Translate[Translation APIs]
-        TTS[Text-to-Speech APIs]
-        Blockchain[Blockchain Services]
-        PaymentGW[Payment Gateways]
-        CDN[Content Delivery Network]
+    subgraph "External Services"
+        L[Stripe API]
+        M[Cloudinary]
+        N[ElevenLabs]
+        O[Translation API]
     end
     
     subgraph "Data Layer"
-        UserDB[(User Database)]
-        ContentDB[(Content Database)]
-        IPDB[(IP Registry Database)]
-        AnalyticsDB[(Analytics Database)]
-        FileStorage[(File Storage)]
+        P[PostgreSQL]
+        Q[Redis Cache]
+        R[File Storage]
     end
     
-    PWA --> Gateway
-    Mobile --> Gateway
-    Gateway --> Auth
-    Gateway --> User
-    Gateway --> Content
-    Gateway --> IP
-    Gateway --> Payment
-    Gateway --> AI
-    Gateway --> Analytics
-    
-    AI --> Translate
-    AI --> TTS
-    IP --> Blockchain
-    Payment --> PaymentGW
-    Content --> CDN
-    
-    Auth --> UserDB
-    User --> UserDB
-    Content --> ContentDB
-    Content --> FileStorage
-    IP --> IPDB
-    Analytics --> AnalyticsDB
+    A --> D
+    D --> G
+    D --> H
+    D --> I
+    D --> J
+    D --> K
+    I --> L
+    K --> M
+    K --> N
+    K --> O
+    G --> P
+    H --> P
+    I --> P
+    J --> Q
+    K --> R
 ```
 
 ### Technology Stack
 
-**Backend Services (FastAPI)**
-- FastAPI for high-performance REST APIs
-- PostgreSQL for relational data (users, content metadata, transactions)
-- Redis for caching and session management
-- MongoDB for analytics and logging data
-- Celery for background task processing
-- Docker containers for service deployment
+**Frontend:**
+- Next.js 14 (App Router) with TypeScript
+- ShadCN UI + Tailwind CSS
+- React Query (TanStack Query) for data fetching
+- NextAuth.js for authentication
+- React Hook Form + Zod for forms
+- next-themes for dark/light mode
+- sonner or react-hot-toast for notifications
 
-**Frontend (Progressive Web App)**
-- React/Next.js for responsive web interface
-- TypeScript for type safety
-- Tailwind CSS for mobile-first styling
-- Service Workers for offline capabilities
-- WebSocket connections for real-time features
+**Backend:**
+- Python 3.11+ with FastAPI
+- SQLAlchemy ORM with Alembic migrations
+- Pydantic for data validation
+- JWT for authentication
+- Redis for caching and sessions
+- Celery for background tasks
 
-**Infrastructure**
-- Kubernetes for container orchestration
-- AWS/GCP for cloud hosting
-- CloudFront/CloudFlare for CDN
-- ElasticSearch for content search
-- Prometheus/Grafana for monitoring
+**Database:**
+- PostgreSQL for primary data storage
+- Redis for caching and real-time features
+
+**External Services:**
+- Stripe for payment processing
+- Cloudinary for media storage and processing
+- ElevenLabs for AI audio generation
+- Google Translate API for content translation
 
 ## Components and Interfaces
 
-### Authentication Service
+### Frontend Architecture
 
-**Purpose**: Manages user authentication, authorization, and session management.
-
-**Key Components**:
-- JWT token management with refresh token rotation
-- OAuth2 integration for social login
-- Role-based access control (Writer, Reader, Studio, Admin)
-- Multi-factor authentication for high-value accounts
-
-**API Endpoints**:
+#### Core Components Structure
 ```
-POST /auth/register - User registration
-POST /auth/login - User authentication
-POST /auth/refresh - Token refresh
-POST /auth/logout - Session termination
-GET /auth/profile - User profile retrieval
-PUT /auth/profile - Profile updates
-```
-
-**Design Rationale**: Separate authentication service enables independent scaling and security updates. JWT tokens provide stateless authentication suitable for mobile clients.
-
-### User Management Service
-
-**Purpose**: Handles user profiles, preferences, and account management.
-
-**Key Components**:
-- User profile management (writers vs readers)
-- Preference storage (language, genres, notifications)
-- Subscription and membership management
-- Social features (following, blocking, reporting)
-
-**Database Schema**:
-```sql
-users (id, email, username, role, created_at, updated_at)
-user_profiles (user_id, display_name, bio, avatar_url, preferences)
-user_subscriptions (user_id, plan_type, status, expires_at)
-user_relationships (follower_id, following_id, relationship_type)
-```
-
-### Content Management Service
-
-**Purpose**: Core content creation, storage, and delivery functionality.
-
-**Key Components**:
-- Story and chapter management
-- Content versioning and history
-- Metadata management (tags, categories, ratings)
-- Content moderation and approval workflows
-
-**API Design**:
-```
-POST /stories - Create new story
-GET /stories/{id} - Retrieve story details
-PUT /stories/{id} - Update story metadata
-POST /stories/{id}/chapters - Add new chapter
-GET /stories/{id}/chapters/{chapter_id} - Get chapter content
-PUT /chapters/{id} - Update chapter content
+src/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   └── register/
+│   │       └── page.tsx
+│   ├── dashboard/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── explore/
+│   │   ├── library/
+│   │   ├── reading-lists/
+│   │   ├── community/
+│   │   └── profile/
+│   ├── reading/
+│   │   └── [bookId]/
+│   │       └── [chapterId]/
+│   │           └── page.tsx
+│   ├── writer/
+│   │   ├── dashboard/
+│   │   ├── books/
+│   │   ├── [bookId]/
+│   │   └── characters/
+│   ├── vault/
+│   │   └── page.tsx
+│   └── layout.tsx
+│
+├── components/
+│   ├── ui/               # ShadCN components
+│   ├── reading/          # Reader controls
+│   ├── writer/           # Writer components
+│   ├── payments/         # Wallet, transactions
+│   └── community/        # Comments, likes
+│
+├── lib/
+│   ├── api.ts            # API client
+│   ├── auth.ts           # Auth utilities
+│   └── utils.ts          # Helpers
+│
+├── hooks/
+│   ├── useAuth.ts
+│   ├── useBooks.ts
+│   └── usePayments.ts
+│
+├── types/
+│   └── index.ts          # TypeScript interfaces
+│
+└── styles/
+    └── globals.css       # Tailwind setup
 ```
 
-**File Storage Strategy**:
-- Original content stored in encrypted format
-- CDN distribution for global access
-- Automatic backup and versioning
-- Content compression for mobile delivery
+#### Key Frontend Components
 
-**Design Rationale**: Separate content service allows independent scaling based on read/write patterns. Versioning ensures IP protection while enabling content updates.
+**Reading Interface Component:**
+- Customizable text rendering with font, size, and theme controls
+- Bookmark management with position tracking
+- Text selection for quote generation
+- Audio playback controls for generated audiobooks
+- Comment system with threading support
 
-### IP Protection Service
+**Payment Component:**
+- Coin wallet display and management
+- Stripe checkout integration
+- Transaction history display
+- Purchase confirmation flows
 
-**Purpose**: Provides cryptographic proof of authorship and rights management.
+**Writer Dashboard Component:**
+- Book and chapter management interface
+- Character profile creation and editing
+- Analytics dashboard with charts
+- Content moderation tools
 
-**Key Components**:
-- Digital fingerprinting using SHA-256 hashing
-- Timestamp authority integration
-- Certificate of Authorship generation
-- Blockchain registration (optional)
-- Plagiarism detection tools
+### Backend Architecture
 
-**IP Registration Flow**:
-```mermaid
-sequenceDiagram
-    participant Writer
-    participant ContentService
-    participant IPService
-    participant Blockchain
-    
-    Writer->>ContentService: Publish Chapter
-    ContentService->>IPService: Register Content
-    IPService->>IPService: Generate Hash + Timestamp
-    IPService->>Blockchain: Optional Registration
-    IPService->>ContentService: Return IP Certificate
-    ContentService->>Writer: Confirm Publication
+#### API Structure
+```
+app/
+├── api/
+│   ├── v1/
+│   │   ├── auth.py          # Authentication endpoints
+│   │   ├── users.py         # User management
+│   │   ├── books.py         # Book operations
+│   │   ├── chapters.py      # Chapter operations
+│   │   ├── payments.py      # Payment processing
+│   │   ├── comments.py      # Community features
+│   │   └── media.py         # Media handling
+├── core/
+│   ├── config.py            # Configuration management
+│   ├── security.py          # Security utilities
+│   └── database.py          # Database connection
+├── models/
+│   ├── user.py              # User data models
+│   ├── book.py              # Book and chapter models
+│   ├── payment.py           # Payment models
+│   └── community.py         # Comment and interaction models
+├── services/
+│   ├── auth_service.py      # Authentication logic
+│   ├── payment_service.py   # Payment processing
+│   ├── media_service.py     # Media operations
+│   └── notification_service.py # Notification handling
+└── utils/
+    ├── license_generator.py # IP license generation
+    └── validators.py        # Data validation
 ```
 
-**Database Schema**:
-```sql
-ip_registrations (id, content_id, hash, timestamp, certificate_url)
-ip_certificates (id, registration_id, certificate_data, blockchain_tx)
-licensing_agreements (id, content_id, licensee_id, terms, revenue_share)
-```
+#### Core API Endpoints
 
-**Design Rationale**: Cryptographic hashing provides tamper-proof evidence of creation time. Blockchain integration offers additional verification for high-value content.
+**Authentication & Users:**
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User authentication
+- `GET /api/v1/users/profile` - Get user profile
+- `PUT /api/v1/users/profile` - Update user profile
+- `POST /api/v1/users/vault-password` - Set vault password
 
-### Payment Processing Service
+**Books & Content:**
+- `GET /api/v1/books` - List books with filters
+- `POST /api/v1/books` - Create new book (writers only)
+- `GET /api/v1/books/{id}` - Get book details
+- `GET /api/v1/books/{id}/chapters` - Get book chapters
+- `POST /api/v1/chapters` - Create new chapter
+- `PUT /api/v1/chapters/{id}` - Update chapter content
 
-**Purpose**: Handles all monetary transactions, revenue distribution, and financial reporting.
+**Payments & Monetization:**
+- `GET /api/v1/wallet` - Get wallet balance
+- `POST /api/v1/wallet/topup` - Create Stripe checkout session
+- `POST /api/v1/purchases` - Purchase book or chapter
+- `GET /api/v1/transactions` - Get transaction history
 
-**Key Components**:
-- Multi-currency coin system
-- Subscription management
-- Revenue sharing calculations
-- Payout processing
-- Financial reporting and tax compliance
+**Community Features:**
+- `POST /api/v1/comments` - Create comment
+- `GET /api/v1/comments/{chapter_id}` - Get chapter comments
+- `POST /api/v1/comments/{id}/like` - Like comment
+- `POST /api/v1/comments/{id}/report` - Report comment
 
-**Revenue Distribution Logic**:
-```python
-def calculate_revenue_share(transaction_type, amount):
-    if transaction_type == "coin_purchase":
-        writer_share = amount * 0.70  # 70% to writer
-        platform_share = amount * 0.30  # 30% to platform
-    elif transaction_type == "subscription":
-        # Distributed based on engagement metrics
-        writer_share = calculate_engagement_share(amount)
-    elif transaction_type == "licensing":
-        writer_share = amount * 0.85  # 85% to writer
-        platform_share = amount * 0.15  # 15% to platform
-    
-    return writer_share, platform_share
-```
-
-**Payment Gateway Integration**:
-- Stripe for international payments
-- Regional payment providers (M-Pesa, Payme, etc.)
-- Cryptocurrency support for global accessibility
-- Automated tax calculation and reporting
-
-### AI Enhancement Service
-
-**Purpose**: Provides AI-powered content enhancement including translation and audiobook generation.
-
-**Key Components**:
-- Translation service integration (Google Translate, DeepL)
-- Text-to-speech conversion with voice selection
-- Content adaptation tools (script generation)
-- Quality assessment and improvement suggestions
-
-**Translation Workflow**:
-```mermaid
-graph LR
-    A[Original Content] --> B[Language Detection]
-    B --> C[Translation API]
-    C --> D[Quality Check]
-    D --> E[Manual Review Option]
-    E --> F[Published Translation]
-    F --> G[Sync with Original]
-```
-
-**Audiobook Generation**:
-- Voice selection based on content genre and target audience
-- Chapter-level audio generation with consistent narrator
-- Audio quality optimization for mobile streaming
-- Synchronization markers for text-audio alignment
-
-**Design Rationale**: AI services are separated to enable independent scaling and easy integration of new AI providers. Asynchronous processing ensures responsive user experience.
-
-### Analytics Service
-
-**Purpose**: Collects, processes, and presents performance metrics for creators and platform optimization.
-
-**Key Components**:
-- Real-time engagement tracking
-- Revenue analytics and forecasting
-- Reader behavior analysis
-- Content performance metrics
-- A/B testing framework
-
-**Metrics Collection**:
-```javascript
-// Client-side tracking
-trackEvent('chapter_read', {
-  story_id: storyId,
-  chapter_id: chapterId,
-  read_duration: duration,
-  completion_percentage: percentage
-});
-
-// Server-side aggregation
-aggregateMetrics('daily_engagement', {
-  story_id: storyId,
-  total_reads: count,
-  average_duration: avg_duration,
-  retention_rate: retention
-});
-```
+**Media & AI Services:**
+- `POST /api/v1/media/upload` - Upload images to Cloudinary
+- `POST /api/v1/audio/generate` - Generate audiobook chapter
+- `POST /api/v1/quotes/generate` - Generate quote image
+- `POST /api/v1/translate` - Translate chapter content
 
 ## Data Models
 
-### Core Entity Relationships
+### Core Database Schema
 
-```mermaid
-erDiagram
-    User ||--o{ Story : creates
-    User ||--o{ Subscription : has
-    User ||--o{ Transaction : makes
-    Story ||--o{ Chapter : contains
-    Story ||--o{ Translation : has
-    Chapter ||--o{ IPRegistration : protected_by
-    Chapter ||--o{ AudioVersion : has
-    Story ||--o{ LicensingAgreement : licensed_through
-    User ||--o{ Comment : writes
-    Chapter ||--o{ Comment : receives
-    
-    User {
-        uuid id PK
-        string email UK
-        string username UK
-        enum role
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    Story {
-        uuid id PK
-        uuid author_id FK
-        string title
-        text description
-        enum status
-        json metadata
-        timestamp created_at
-    }
-    
-    Chapter {
-        uuid id PK
-        uuid story_id FK
-        int chapter_number
-        string title
-        text content
-        enum status
-        timestamp published_at
-    }
-    
-    IPRegistration {
-        uuid id PK
-        uuid chapter_id FK
-        string content_hash
-        timestamp registered_at
-        string certificate_url
-    }
-```
-
-### Payment and Revenue Models
-
+#### Users Table
 ```sql
--- Coin system for microtransactions
-CREATE TABLE coin_packages (
-    id UUID PRIMARY KEY,
-    name VARCHAR(100),
-    coin_amount INTEGER,
-    price_usd DECIMAL(10,2),
-    bonus_percentage DECIMAL(5,2)
-);
-
--- Transaction tracking
-CREATE TABLE transactions (
-    id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    transaction_type VARCHAR(50),
-    amount DECIMAL(10,2),
-    currency VARCHAR(3),
-    status VARCHAR(20),
-    created_at TIMESTAMP
-);
-
--- Revenue distribution
-CREATE TABLE revenue_shares (
-    id UUID PRIMARY KEY,
-    content_id UUID,
-    writer_id UUID REFERENCES users(id),
-    transaction_id UUID REFERENCES transactions(id),
-    writer_amount DECIMAL(10,2),
-    platform_amount DECIMAL(10,2),
-    processed_at TIMESTAMP
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    profile_picture_url TEXT,
+    is_writer BOOLEAN DEFAULT FALSE,
+    vault_password_hash VARCHAR(255),
+    theme_preference VARCHAR(20) DEFAULT 'light',
+    coin_balance INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
+#### Books Table
+```sql
+CREATE TABLE books (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    cover_image_url TEXT,
+    author_id UUID REFERENCES users(id),
+    pricing_model VARCHAR(20) NOT NULL, -- 'free', 'fixed', 'per_chapter'
+    fixed_price INTEGER, -- in coins
+    per_chapter_price INTEGER, -- in coins
+    genre VARCHAR(100),
+    tags TEXT[], -- PostgreSQL array
+    is_published BOOLEAN DEFAULT FALSE,
+    license_hash VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Chapters Table
+```sql
+CREATE TABLE chapters (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    book_id UUID REFERENCES books(id),
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    chapter_number INTEGER NOT NULL,
+    word_count INTEGER,
+    is_published BOOLEAN DEFAULT FALSE,
+    audio_url TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(book_id, chapter_number)
+);
+```
+
+#### User Library Table
+```sql
+CREATE TABLE user_library (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    book_id UUID REFERENCES books(id),
+    is_in_vault BOOLEAN DEFAULT FALSE,
+    added_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, book_id)
+);
+```
+
+#### Bookmarks Table
+```sql
+CREATE TABLE bookmarks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    chapter_id UUID REFERENCES chapters(id),
+    position_percentage DECIMAL(5,2),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, chapter_id)
+);
+```
+
+#### Comments Table
+```sql
+CREATE TABLE comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chapter_id UUID REFERENCES chapters(id),
+    user_id UUID REFERENCES users(id),
+    parent_id UUID REFERENCES comments(id),
+    content TEXT NOT NULL,
+    like_count INTEGER DEFAULT 0,
+    is_reported BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Transactions Table
+```sql
+CREATE TABLE transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    transaction_type VARCHAR(20) NOT NULL, -- 'topup', 'purchase'
+    amount INTEGER NOT NULL, -- in coins
+    stripe_session_id VARCHAR(255),
+    book_id UUID REFERENCES books(id),
+    chapter_id UUID REFERENCES chapters(id),
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Data Relationships
+
+- Users can be both readers and writers (is_writer flag)
+- Writers own multiple books, each book has multiple chapters
+- Users have a library of books (purchased or free)
+- Users can bookmark positions in chapters
+- Comments are threaded (parent_id for replies)
+- Transactions track both wallet top-ups and content purchases
 
 ## Error Handling
 
-### Error Classification and Response Strategy
+### Frontend Error Handling
 
-**Client Errors (4xx)**:
-- 400 Bad Request: Invalid input validation
-- 401 Unauthorized: Authentication required
-- 403 Forbidden: Insufficient permissions
-- 404 Not Found: Resource doesn't exist
-- 429 Too Many Requests: Rate limiting
+**Network Errors:**
+- Implement retry logic with exponential backoff
+- Show user-friendly offline messages
+- Cache critical data locally for offline access
 
-**Server Errors (5xx)**:
-- 500 Internal Server Error: Unexpected system failure
-- 502 Bad Gateway: External service unavailable
-- 503 Service Unavailable: Temporary overload
-- 504 Gateway Timeout: External service timeout
+**Authentication Errors:**
+- Automatic token refresh for expired JWTs
+- Redirect to login on authentication failures
+- Secure token storage using HTTP-only cookies
 
-**Error Response Format**:
-```json
+**Payment Errors:**
+- Clear error messages for failed transactions
+- Retry mechanisms for network-related payment failures
+- Fallback to manual retry options
+
+### Backend Error Handling
+
+**API Error Responses:**
+```python
+class APIError(Exception):
+    def __init__(self, status_code: int, message: str, details: dict = None):
+        self.status_code = status_code
+        self.message = message
+        self.details = details or {}
+
+# Standard error response format
 {
-  "error": {
-    "code": "INVALID_CONTENT_FORMAT",
-    "message": "Chapter content must be between 100 and 10000 characters",
-    "details": {
-      "field": "content",
-      "current_length": 50,
-      "min_length": 100,
-      "max_length": 10000
-    },
-    "timestamp": "2025-01-11T10:30:00Z",
-    "request_id": "req_123456789"
-  }
+    "error": {
+        "code": "INSUFFICIENT_COINS",
+        "message": "Not enough coins to complete purchase",
+        "details": {
+            "required": 50,
+            "available": 25
+        }
+    }
 }
 ```
 
-### Resilience Patterns
+**Database Error Handling:**
+- Connection pooling with automatic retry
+- Transaction rollback on failures
+- Graceful degradation for non-critical features
 
-**Circuit Breaker**: Protect against cascading failures in external service calls
-**Retry Logic**: Exponential backoff for transient failures
-**Graceful Degradation**: Fallback to cached content when services are unavailable
-**Bulkhead Pattern**: Isolate critical services to prevent total system failure
-
-### Monitoring and Alerting
-
-**Health Checks**:
-- Service availability monitoring
-- Database connection health
-- External API response times
-- Queue processing delays
-
-**Alert Thresholds**:
-- Error rate > 5% triggers immediate alert
-- Response time > 2s triggers warning
-- Payment processing failures trigger critical alert
-- IP service unavailability triggers urgent alert
+**External Service Error Handling:**
+- Circuit breaker pattern for third-party APIs
+- Fallback mechanisms (e.g., cached translations)
+- Async retry queues for media processing
 
 ## Testing Strategy
 
-### Unit Testing
-- Service layer business logic testing
-- Data model validation testing
-- Utility function testing
-- Mock external dependencies
+### Frontend Testing Approach
 
-### Integration Testing
-- API endpoint testing with real databases
-- Service-to-service communication testing
-- Payment flow integration testing
-- AI service integration testing
+Since you prefer testing by running the application rather than automated tests, the testing strategy focuses on:
 
-### End-to-End Testing
-- Complete user journey testing (registration to monetization)
-- Cross-platform compatibility testing
-- Performance testing under load
-- Security penetration testing
+**Manual Testing Workflows:**
+1. **Authentication Flow Testing:**
+   - Register new account → verify email validation
+   - Login with valid/invalid credentials
+   - Profile updates and theme changes
 
-### Testing Tools and Framework
-```python
-# FastAPI testing example
-def test_create_story():
-    response = client.post("/stories", json={
-        "title": "Test Story",
-        "description": "A test story",
-        "genre": "fiction"
-    }, headers={"Authorization": f"Bearer {auth_token}"})
-    
-    assert response.status_code == 201
-    assert response.json()["title"] == "Test Story"
-    assert "id" in response.json()
-```
+2. **Reading Experience Testing:**
+   - Book discovery and filtering
+   - Reading interface customization
+   - Bookmark creation and navigation
+   - Audio generation and playback
+
+3. **Payment Flow Testing:**
+   - Wallet top-up via Stripe (use test mode)
+   - Book/chapter purchases
+   - Transaction history verification
+
+4. **Community Feature Testing:**
+   - Comment creation and threading
+   - Like functionality and author badges
+   - Report and moderation features
+
+5. **Writer Feature Testing:**
+   - Book and chapter creation
+   - Character profile management
+   - Analytics dashboard
+   - Content moderation tools
+
+### Backend Testing Strategy
+
+**API Testing with Postman/Insomnia:**
+- Create collections for each API endpoint
+- Test authentication flows and token validation
+- Verify data validation and error responses
+- Test payment webhook handling
+
+**Database Testing:**
+- Verify data integrity constraints
+- Test transaction rollbacks
+- Validate foreign key relationships
+- Check performance with sample data
+
+**Integration Testing:**
+- Test Stripe webhook processing
+- Verify Cloudinary image uploads
+- Test ElevenLabs audio generation
+- Validate translation API integration
 
 ### Performance Testing
-- Load testing for concurrent users (target: 10,000 concurrent readers)
-- Stress testing for peak traffic scenarios
-- Database performance testing for large content volumes
-- CDN performance testing for global content delivery
 
-**Performance Targets**:
-- API response time < 200ms for 95% of requests
-- Page load time < 2s on 3G networks
-- Content search results < 500ms
-- Payment processing < 5s end-to-end
+**Load Testing Scenarios:**
+- Concurrent user authentication
+- Multiple simultaneous book purchases
+- High-volume comment creation
+- Media upload stress testing
 
-This design provides a robust, scalable foundation for the Legato platform while addressing all requirements for IP protection, global monetization, and mobile-first user experience.
+**Monitoring and Metrics:**
+- API response times
+- Database query performance
+- External service latency
+- User engagement metrics
+
+## Security Considerations
+
+### Authentication & Authorization
+- JWT tokens with short expiration times
+- Refresh token rotation
+- Role-based access control (Reader/Writer)
+- Secure password hashing with bcrypt
+
+### Data Protection
+- Input validation and sanitization
+- SQL injection prevention via ORM
+- XSS protection for user-generated content
+- HTTPS enforcement for all communications
+
+### Payment Security
+- PCI compliance through Stripe
+- Webhook signature verification
+- Secure handling of payment data
+- Transaction audit logging
+
+### Content Security
+- License hash generation for IP protection
+- Secure file upload validation
+- Content moderation capabilities
+- User data privacy controls
+
+This design provides a comprehensive foundation for building the Legato platform with modern architecture, scalable components, and robust security measures while supporting your preference for manual testing and iterative development.

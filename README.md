@@ -1,162 +1,179 @@
-# Legato - Where Stories Become IP
+# Legato Platform
 
-## Inspiration
+A social reading and writing platform that enables readers to discover, read, and interact with books and chapters while providing writers with tools to publish, monetize, and build communities around their stories.
 
-The inspiration for Legato came from witnessing the struggles of talented writers, particularly in Africa, MENA, and the Global South, who create amazing stories but lack the infrastructure to protect their intellectual property and monetize their work fairly. We saw how platforms like Wattpad and Webnovel, while popular, don't prioritize IP protection or provide clear pathways for writers to license their work to studios and publishers.
+## Tech Stack
 
-We were inspired by the idea that every story has the potential to become valuable intellectual property - whether it's the next Netflix series, a bestselling novel, or a blockbuster movie. But writers needed a platform that would not only help them reach global audiences but also protect their rights and ensure they get paid fairly when their stories are adapted.
+### Frontend
+- Next.js 14 (App Router) with TypeScript
+- ShadCN UI + Tailwind CSS
+- React Query (TanStack Query) for data fetching
+- NextAuth.js for authentication
+- React Hook Form + Zod for forms
 
-## What it does
+### Backend
+- Python 3.11+ with FastAPI
+- SQLAlchemy ORM with Alembic migrations
+- SQLite (development) / PostgreSQL (production)
+- Redis for caching and sessions
+- JWT for authentication
 
-Legato is a comprehensive platform for serialized storytelling that empowers writers to publish, protect, and monetize their work while reaching global audiences. Here's what makes Legato unique:
+### External Services
+- Stripe for payment processing
+- Cloudinary for media storage
+- ElevenLabs for AI audio generation
 
-**For Writers:**
-- **Smart Publishing Contracts**: Automatic copyright protection with digital fingerprints
-- **IP Registry**: Proof of authorship using blockchain-like technology
-- **Global Reach**: Instant translation capabilities to reach international audiences
-- **AI-Powered Tools**: Automated audiobook generation from text
-- **Fair Monetization**: Multiple revenue streams including microtransactions, subscriptions, tips, and licensing deals
-- **Analytics Dashboard**: Comprehensive insights into story performance and earnings
+## Project Structure
 
-**For Readers:**
-- **Diverse Content**: Stories from writers worldwide with automatic translation
-- **Interactive Features**: Comments, ratings, and community engagement
-- **Personalized Experience**: Reading history, bookmarks, and recommendations
-- **Multiple Formats**: Text and AI-generated audio versions
-- **Mobile-First Design**: Optimized for smartphones and offline reading
+```
+legato/
+├── frontend/          # Next.js frontend application
+├── backend/           # FastAPI backend application
+├── package.json       # Root package.json for development scripts
+└── README.md         # This file
+```
 
-**For Studios & Publishers:**
-- **IP Marketplace**: Browse and license ready-to-adapt stories
-- **Verified Ownership**: Clear IP rights and ownership verification
-- **Performance Metrics**: Data-driven insights for licensing decisions
-- **Direct Creator Contact**: Connect directly with writers for collaborations
+## Setup Instructions
 
-## How we built it
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.11+
+- Git
 
-Legato is built using a modern, scalable microservices architecture:
+### Quick Start
 
-**Frontend (Next.js 14 + TypeScript)**
-- React-based web application with server-side rendering
-- Tailwind CSS for responsive, mobile-first design
-- Real-time features using WebSockets
-- Progressive Web App (PWA) capabilities for offline reading
-- Authentication context with JWT token management
+1. **Clone and install dependencies:**
+   ```bash
+   git clone <repository-url>
+   cd legato
+   npm run install:all
+   ```
 
-**Backend Services (FastAPI + Python)**
-- **Authentication Service**: User management, JWT tokens, role-based access
-- **Content Service**: Story management, chapters, and multimedia content
-- **Community Service**: Comments, ratings, and social features
-- **Analytics Service**: Performance tracking and insights
-- **Payment Service**: Monetization and revenue distribution
+2. **Set up environment variables:**
+   ```bash
+   # Backend
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your configuration
+   
+   # Frontend
+   cp frontend/.env.local.example frontend/.env.local
+   # Edit frontend/.env.local with your configuration
+   ```
 
-**Database & Storage**
-- PostgreSQL for relational data (users, stories, transactions)
-- Redis for caching and session management
-- Cloud storage for multimedia content (images, audio files)
+3. **Initialize the database:**
+   ```bash
+   cd backend
+   # Activate virtual environment
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Run initial migration
+   alembic upgrade head
+   ```
 
-**Key Technologies:**
-- **Authentication**: JWT tokens with refresh token rotation
-- **API Architecture**: RESTful APIs with OpenAPI documentation
-- **Real-time Features**: WebSocket connections for live updates
-- **File Processing**: Image optimization and audio generation
-- **Internationalization**: Multi-language support with translation APIs
+4. **Start development servers:**
+   ```bash
+   # From root directory
+   npm run dev
+   ```
 
-## Challenges we ran into
+   This will start:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
 
-**1. Authentication Flow Complexity**
-- Initially struggled with token management between frontend and backend
-- Had to implement proper token refresh mechanisms and handle edge cases
-- Solved by creating a robust service client with automatic token refresh
+### Individual Services
 
-**2. Microservices Communication**
-- Coordinating between multiple services while maintaining data consistency
-- Implemented proper error handling and retry mechanisms
-- Created a unified API client that routes requests to appropriate services
+**Frontend only:**
+```bash
+npm run dev:frontend
+```
 
-**3. Mobile-First Design**
-- Ensuring the platform works seamlessly across all device sizes
-- Optimizing for slow internet connections common in target markets
-- Implemented progressive loading and offline capabilities
+**Backend only:**
+```bash
+npm run dev:backend
+```
 
-**4. IP Protection Implementation**
-- Designing a system that provides real proof of authorship
-- Balancing security with user experience
-- Created digital fingerprinting system with timestamp verification
+## API Endpoints
 
-**5. Scalability Concerns**
-- Building for potential viral growth while maintaining performance
-- Implementing efficient caching strategies
-- Designing database schemas that can handle millions of stories and users
+### Health Check
+- `GET /health` - API health check
+- `GET /api/v1/health` - API v1 health check
 
-## Accomplishments that we're proud of
+### Authentication (Planned)
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/login` - User login
 
-**1. Complete Authentication System**
-- Built a production-ready authentication flow with registration, login, and user management
-- Implemented role-based access control (readers, writers, studios)
-- Created secure token management with automatic refresh
+### Users (Planned)
+- `GET /api/v1/users/profile` - Get user profile
+- `PUT /api/v1/users/profile` - Update user profile
 
-**2. Comprehensive User Experience**
-- Developed a full dashboard system with role-specific features
-- Built reading history, library management, and profile settings
-- Created responsive design that works perfectly on mobile and desktop
+### Books (Planned)
+- `GET /api/v1/books` - List books with filters
+- `POST /api/v1/books` - Create new book
+- `GET /api/v1/books/{id}` - Get book details
 
-**3. Microservices Architecture**
-- Successfully implemented a scalable backend with multiple specialized services
-- Created proper API documentation and testing frameworks
-- Built robust error handling and logging systems
+## Development
 
-**4. Real-World Functionality**
-- All major user flows work end-to-end (registration → login → dashboard → features)
-- Implemented actual database operations with proper data validation
-- Created realistic demo data and user interactions
+### Adding New Dependencies
 
-**5. Professional UI/UX**
-- Designed a modern, intuitive interface that rivals major platforms
-- Implemented smooth animations and transitions
-- Created consistent design system with proper accessibility
+**Frontend:**
+```bash
+cd frontend
+npm install <package-name>
+```
 
-## What we learned
+**Backend:**
+```bash
+cd backend
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install <package-name>
+pip freeze > requirements.txt
+```
 
-**Technical Learnings:**
-- **Microservices Complexity**: Managing multiple services requires careful planning for communication, error handling, and data consistency
-- **Authentication Best Practices**: Proper JWT implementation with refresh tokens, secure storage, and session management
-- **Frontend State Management**: Balancing server state, client state, and authentication context in React applications
-- **API Design**: Creating consistent, well-documented APIs that are easy to consume and maintain
+### Database Migrations
 
-**Product Learnings:**
-- **User-Centric Design**: The importance of understanding user needs in different markets and designing for mobile-first experiences
-- **IP Protection Value**: Writers genuinely need and want IP protection, but it must be seamless and not interfere with the creative process
-- **Monetization Balance**: Finding the right balance between platform sustainability and fair creator compensation
+**Create new migration:**
+```bash
+cd backend
+alembic revision --autogenerate -m "Description of changes"
+```
 
-**Market Insights:**
-- **Global South Opportunity**: Huge untapped potential for storytelling platforms in emerging markets
-- **Translation Technology**: AI-powered translation can truly democratize content access across language barriers
-- **Creator Economy**: Writers want more than just exposure - they need real tools for building sustainable creative businesses
+**Apply migrations:**
+```bash
+alembic upgrade head
+```
 
-## What's next for Legato
+### Code Quality
 
-**Short-term (Next 3 months):**
-- **Content Creation Tools**: Rich text editor with collaborative features
-- **Payment Integration**: Stripe/PayPal integration for real monetization
-- **Mobile App**: Native iOS and Android applications
-- **Advanced Analytics**: Detailed performance metrics and audience insights
-- **Community Features**: Enhanced social features, writer groups, and reader communities
+The project uses:
+- ESLint and TypeScript for frontend code quality
+- Python type hints and proper imports for backend
+- Consistent code formatting
 
-**Medium-term (6-12 months):**
-- **AI Content Tools**: Advanced AI assistance for writing, editing, and story development
-- **Blockchain IP Registry**: Immutable proof of authorship using blockchain technology
-- **Translation Engine**: Custom AI translation optimized for creative content
-- **Licensing Platform**: Full marketplace for IP licensing with legal framework
-- **Audio Platform**: Professional audiobook creation and distribution
+## Environment Variables
 
-**Long-term (1-2 years):**
-- **Global Expansion**: Localized versions for key markets (Africa, MENA, Latin America, Southeast Asia)
-- **Studio Partnerships**: Direct partnerships with Netflix, Amazon, and other content producers
-- **Educational Platform**: Writing courses, IP education, and creator development programs
-- **Publishing Network**: Traditional publishing partnerships and print-on-demand services
-- **Creator Fund**: Investment fund to support promising writers and stories
+### Backend (.env)
+```
+DATABASE_URL=sqlite:///./legato.db
+REDIS_URL=redis://localhost:6379
+SECRET_KEY=your-secret-key
+ALLOWED_HOSTS=["http://localhost:3000"]
+```
 
-**Vision:**
-Our ultimate goal is to become the go-to platform where the next generation of global storytellers can build sustainable creative careers while maintaining ownership of their intellectual property. We want to democratize access to global audiences and create a fair, transparent ecosystem where great stories can find their way to the right audiences and adaptations, regardless of where they originate.
+### Frontend (.env.local)
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-nextauth-secret
+```
 
-Legato isn't just a platform - it's a movement to ensure that every writer, everywhere, has the tools and opportunities to turn their stories into valuable intellectual property and sustainable income.
+## Contributing
+
+1. Create a feature branch from main
+2. Make your changes
+3. Test your changes locally
+4. Submit a pull request
+
+## License
+
+[Add your license information here]

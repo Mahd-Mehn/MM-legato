@@ -1,13 +1,67 @@
-# Environment files
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Next.js build output
+.next/
+*/.next/
+
+# Environment variables
 .env
 .env.local
-.env.production
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Python
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+# Pyt
+hon
 __pycache__/
+*/__pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Virtual environments
+venv/
+backend/venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Python distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -26,91 +80,33 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+# PyInstaller
+*.manifest
+*.spec
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Docker
-.dockerignore
-
-# Logs
-*.log
-logs/
-
-# Database
-*.db
-*.sqlite3
-
-# Temporary files
-tmp/
-temp/
-.tmp/
-
-# Node.js (for future frontend)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Coverage reports
+# Unit test / coverage reports
 htmlcov/
+.tox/
 .coverage
 .coverage.*
+.cache
+nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
 
-# Storage
-storage/
-uploads/
-media/
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Certificates and keys
-*.pem
-*.key
-*.crt
-*.p12
+# pyenv
+.python-version
 
-# Backup files
-*.bak
-*.backup
-
-
-services/frontend-service/node_modules/
-services/frontend-service/.next/
-services/frontend-service/.env.local
-services/frontend-service/.env.development.local
-services/frontend-service/.env.test.local
-services/frontend-service/.env.production.local
-services/frontend-service/.gitignore
-services/frontend-service/.eslintrc.json
-services/frontend-service/.prettierrc
-services/frontend-service/.prettierignore
-services/frontend-service/.stylelintrc.json
-services/frontend-service/.stylelintignore
-services/frontend-service/.storybook
-services/frontend-service/.storybook/main.js
-services/frontend-service/.storybook/preview.js
-services/frontend-service/.storybook/webpack.config.js
-services/frontend-service/.storybook/webpack.config.js
-services/frontend-service/.storybook/webpack.config.js
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
