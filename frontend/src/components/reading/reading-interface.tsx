@@ -6,8 +6,13 @@ import { ReadingContent } from './reading-content'
 import { ReadingControls } from './reading-controls'
 import { ReadingSettings } from './reading-settings'
 import { TableOfContents } from './table-of-contents'
+import { AudioPlayer } from './audio-player'
+import { TextSelectionHandler } from './text-selection-handler'
+import { TranslationDialog } from './translation-dialog'
+import { QuoteDialog } from './quote-dialog'
 import { useReadingPreferences, useBookNavigation, useBookmark } from '../../hooks/useReading'
 import { useReadingProgress } from '../../hooks/useReadingProgress'
+import { useAdvancedReading } from '../../hooks/useAdvancedReading'
 import { ChapterReadingResponse } from '../../types/reading'
 import { getCachedBookmark, setCachedBookmark } from '../../lib/bookmarkCache'
 import { toast } from 'sonner'
@@ -22,6 +27,15 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [lastSavedProgress, setLastSavedProgress] = useState(0)
   const [isSavingBookmark, setIsSavingBookmark] = useState(false)
+  
+  // Advanced reading features state
+  const [showAudioPlayer, setShowAudioPlayer] = useState(false)
+  const [chapterAudio, setChapterAudio] = useState<any>(null)
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false)
+  const [showTranslationDialog, setShowTranslationDialog] = useState(false)
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [selectedTextForAction, setSelectedTextForAction] = useState('')
+  
   const contentRef = useRef<HTMLDivElement>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
@@ -29,6 +43,14 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
   const { data: navigation } = useBookNavigation(chapterData.book_id)
   const { createBookmark } = useBookmark()
   const { updateProgress } = useReadingProgress()
+  const {
+    generateAudio,
+    getChapterAudio,
+    translateChapter,
+    translateText,
+    generateQuote,
+    isLoading: isAdvancedLoading
+  } = useAdvancedReading()
 
   // Debounced bookmark and progress save function
   const debouncedSaveProgress = useCallback((progress: number) => {
@@ -109,6 +131,88 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
     const initialProgress = cachedProgress !== null ? cachedProgress : serverProgress
     setLastSavedProgress(initialProgress)
   }, [chapterData.bookmark, chapterData.id])
+
+  // Load existing audio when component mounts (only once per chapter)
+  useEffect(() => {
+    let isMounted = true
+    
+    const loadChapterAudio = async () => {
+      try {
+        const audioData = await getChapterAudio(chapterData.id)
+        if (audioData && isMounted) {
+          setChapterAudio(audioData)
+        }
+      } catch (error) {
+        console.error('Failed to load chapter audio:', error)
+      }
+    }
+
+    // Reset audio state when chapter changes
+    setChapterAudio(null)
+    setShowAudioPlayer(false)
+    
+    // Load audio data for new chapter
+    loadChapterAudio()
+    
+    return () => {
+      isMounted = false
+    }
+  }, [chapterData.id]) // Only depend on chapter ID
+
+  // Advanced reading feature handlers
+  const handleGenerateAudio = async () => {
+    try {
+      toast.loading('Generating audio...', { id: 'audio-generation' })
+      const audioData = await generateAudio(chapterData.id)
+      setChapterAudio(audioData)
+      setShowAudioPlayer(true)
+      toast.success('Audio generated successfully', { id: 'audio-generation' })
+    } catch (error) {
+      toast.error('Failed to generate audio', { id: 'audio-generation' })
+    }
+  }
+
+  const handleToggleAudio = async () => {
+    if (!chapterAudio) {
+      // Try to load audio first
+      try {
+        const audioData = await getChapterAudio(chapterData.id)
+        if (audioData) {
+          setChapterAudio(audioData)
+          setShowAudioPlayer(true)
+        }
+      } catch (error) {
+        console.error('Failed to load audio:', error)
+      }
+    } else {
+      setShowAudioPlayer(!showAudioPlayer)
+    }
+  }
+
+  const handleTextSelection = (selectedText: string) => {
+    setSelectedTextForAction(selectedText)
+    setShowQuoteDialog(true)
+  }
+
+  const handleTranslateSelection = (selectedText: string) => {
+    setSelectedTextForAction(selectedText)
+    setShowTranslationDialog(true)
+  }
+
+  const handleTranslateChapter = async (language: string) => {
+    return await translateChapter(chapterData.id, language)
+  }
+
+  const handleTranslateText = async (text: string, language: string) => {
+    return await translateText(text, language)
+  }
+
+  const handleGenerateQuote = async (quoteData: any) => {
+    return await generateQuote({
+      ...quoteData,
+      chapter_id: chapterData.id
+    })
+  }
 
   // Restore bookmark position on load
   useEffect(() => {
@@ -212,7 +316,21 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
         onSettingsClick={() => setShowSettings(true)}
         onTOCClick={() => setShowTOC(true)}
         isSavingBookmark={isSavingBookmark}
+        onGenerateAudio={handleGenerateAudio}
+        onToggleAudio={handleToggleAudio}
+        hasAudio={!!chapterAudio}
+        isGeneratingAudio={isAdvancedLoading}
       />
+
+      {/* Audio Player */}
+      {showAudioPlayer && chapterAudio && (
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-md px-4">
+          <AudioPlayer
+            audioUrl={chapterAudio.audio_url}
+            className="shadow-lg"
+          />
+        </div>
+      )}
 
       {/* Main content area */}
       <div 
@@ -220,15 +338,20 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
         className="reading-content-container overflow-y-auto flex justify-center"
         style={{ 
           height: 'calc(100vh - 64px)', // Account for header height
-          paddingTop: '2rem',
+          paddingTop: showAudioPlayer && chapterAudio ? '10rem' : '2rem',
           paddingBottom: '4rem'
         }}
       >
         <div className="w-full flex justify-center">
-          <ReadingContent 
-            chapterData={chapterData}
-            preferences={preferences}
-          />
+          <TextSelectionHandler
+            onGenerateQuote={handleTextSelection}
+            onTranslateText={handleTranslateSelection}
+          >
+            <ReadingContent 
+              chapterData={chapterData}
+              preferences={preferences}
+            />
+          </TextSelectionHandler>
         </div>
       </div>
 
@@ -255,6 +378,25 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
           onClose={() => setShowTOC(false)}
         />
       )}
+
+      {/* Translation Dialog */}
+      <TranslationDialog
+        open={showTranslationDialog}
+        onOpenChange={setShowTranslationDialog}
+        selectedText={selectedTextForAction}
+        chapterId={chapterData.id}
+        onTranslateChapter={handleTranslateChapter}
+        onTranslateText={handleTranslateText}
+      />
+
+      {/* Quote Generation Dialog */}
+      <QuoteDialog
+        open={showQuoteDialog}
+        onOpenChange={setShowQuoteDialog}
+        selectedText={selectedTextForAction}
+        chapterId={chapterData.id}
+        onGenerateQuote={handleGenerateQuote}
+      />
     </div>
   )
 }

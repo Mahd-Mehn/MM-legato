@@ -8,7 +8,11 @@ import {
   List,
   Bookmark,
   Share,
-  MoreVertical
+  MoreVertical,
+  Volume2,
+  VolumeX,
+  Loader2,
+  Languages
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { ChapterReadingResponse } from '../../types/reading'
@@ -25,6 +29,10 @@ interface ReadingHeaderProps {
   onSettingsClick: () => void
   onTOCClick: () => void
   isSavingBookmark?: boolean
+  onGenerateAudio?: () => void
+  onToggleAudio?: () => void
+  hasAudio?: boolean
+  isGeneratingAudio?: boolean
 }
 
 export function ReadingHeader({
@@ -32,7 +40,11 @@ export function ReadingHeader({
   scrollProgress,
   onSettingsClick,
   onTOCClick,
-  isSavingBookmark = false
+  isSavingBookmark = false,
+  onGenerateAudio,
+  onToggleAudio,
+  hasAudio = false,
+  isGeneratingAudio = false
 }: ReadingHeaderProps) {
   const router = useRouter()
 
@@ -105,6 +117,34 @@ export function ReadingHeader({
 
         {/* Right section */}
         <div className="flex items-center space-x-2">
+          {/* Audio controls */}
+          {hasAudio ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleAudio}
+              className="p-2"
+              title="Toggle audio player"
+            >
+              <Volume2 className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onGenerateAudio}
+              disabled={isGeneratingAudio}
+              className="p-2"
+              title="Generate audio"
+            >
+              {isGeneratingAudio ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+
           <Button
             variant="ghost"
             size="sm"

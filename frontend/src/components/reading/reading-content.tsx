@@ -2,6 +2,7 @@
 
 import { ChapterReadingResponse, ReadingPreferences } from '../../types/reading'
 import { Badge } from '@/components/ui/badge'
+import { CommentSection } from '@/components/community'
 import { Clock, BookOpen } from 'lucide-react'
 
 interface ReadingContentProps {
@@ -93,6 +94,11 @@ export function ReadingContent({ chapterData, preferences }: ReadingContentProps
             )}
           </div>
         </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="mt-8">
+        <CommentSection chapterId={chapterData.id} />
       </div>
     </div>
   )
