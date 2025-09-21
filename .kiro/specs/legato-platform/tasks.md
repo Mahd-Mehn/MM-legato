@@ -140,7 +140,7 @@
   - Create insufficient funds handling with auto-redirect to top-up
   - _Requirements: 5.7, 11.3, 11.4, 11.5_
 
-- [ ] 11. Reading Experience Core (Integrated)
+- [x] 11. Reading Experience Core (Integrated)
 
 
 

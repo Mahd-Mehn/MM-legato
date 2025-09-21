@@ -10,6 +10,7 @@ import { useReadingPreferences, useBookNavigation, useBookmark } from '../../hoo
 import { useReadingProgress } from '../../hooks/useReadingProgress'
 import { ChapterReadingResponse } from '../../types/reading'
 import { getCachedBookmark, setCachedBookmark } from '../../lib/bookmarkCache'
+import { toast } from 'sonner'
 
 interface ReadingInterfaceProps {
   chapterData: ChapterReadingResponse
@@ -87,11 +88,14 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
     }
   }, [debouncedSaveProgress])
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
+      }
+      if (preferenceTimeoutRef.current) {
+        clearTimeout(preferenceTimeoutRef.current)
       }
     }
   }, [])
@@ -150,13 +154,31 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
     document.body.setAttribute('data-reading-theme', preferences.theme_preset)
   }, [preferences])
 
+  // Debounced preference updates to prevent multiple toasts
+  const preferenceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   const handlePreferenceChange = (key: string | Record<string, any>, value?: any) => {
+    // Clear existing timeout
+    if (preferenceTimeoutRef.current) {
+      clearTimeout(preferenceTimeoutRef.current)
+    }
+
     if (typeof key === 'object') {
-      // Handle multiple updates at once
-      updatePreferences(key)
+      // Handle multiple updates at once - update immediately without toast
+      updatePreferences(key, false)
+      
+      // Show single toast after delay
+      preferenceTimeoutRef.current = setTimeout(() => {
+        toast.success('Reading preferences updated')
+      }, 500)
     } else {
-      // Handle single update
-      updatePreferences({ [key]: value })
+      // Handle single update - update immediately without toast
+      updatePreferences({ [key]: value }, false)
+      
+      // Show single toast after delay
+      preferenceTimeoutRef.current = setTimeout(() => {
+        toast.success('Reading preferences updated')
+      }, 500)
     }
   }
 

@@ -44,9 +44,11 @@ export function ReadingSettings({ preferences, onPreferenceChange, onClose }: Re
   }
 
   const handleColorChange = (type: 'background' | 'text', color: string) => {
-    onPreferenceChange(`${type}_color`, color)
-    // Reset theme preset when manually changing colors
-    onPreferenceChange('theme_preset', 'custom')
+    // Update both the color and reset theme preset in a single call to prevent multiple toasts
+    onPreferenceChange({
+      [`${type}_color`]: color,
+      theme_preset: 'custom'
+    })
   }
 
   return (
@@ -112,29 +114,41 @@ export function ReadingSettings({ preferences, onPreferenceChange, onClose }: Re
                 <div>
                   <Label className="text-xs text-slate-600 dark:text-slate-400">Background</Label>
                   <div className="flex items-center space-x-2 mt-1">
-                    <input
-                      type="color"
-                      value={preferences?.background_color || '#ffffff'}
-                      onChange={(e) => handleColorChange('background', e.target.value)}
-                      className="w-8 h-8 rounded border border-slate-300 dark:border-slate-600"
-                    />
-                    <span className="text-sm font-mono">
-                      {preferences?.background_color || '#ffffff'}
-                    </span>
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={preferences?.background_color || '#ffffff'}
+                        onChange={(e) => handleColorChange('background', e.target.value)}
+                        className="w-12 h-10 rounded-lg border-2 border-slate-300 dark:border-slate-600 cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all duration-200 hover:scale-105"
+                        title="Click to select background color"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-mono">
+                        {preferences?.background_color || '#ffffff'}
+                      </span>
+                      <span className="text-xs text-slate-500">Click to change</span>
+                    </div>
                   </div>
                 </div>
                 <div>
                   <Label className="text-xs text-slate-600 dark:text-slate-400">Text</Label>
                   <div className="flex items-center space-x-2 mt-1">
-                    <input
-                      type="color"
-                      value={preferences?.text_color || '#000000'}
-                      onChange={(e) => handleColorChange('text', e.target.value)}
-                      className="w-8 h-8 rounded border border-slate-300 dark:border-slate-600"
-                    />
-                    <span className="text-sm font-mono">
-                      {preferences?.text_color || '#000000'}
-                    </span>
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={preferences?.text_color || '#000000'}
+                        onChange={(e) => handleColorChange('text', e.target.value)}
+                        className="w-12 h-10 rounded-lg border-2 border-slate-300 dark:border-slate-600 cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all duration-200 hover:scale-105"
+                        title="Click to select text color"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-mono">
+                        {preferences?.text_color || '#000000'}
+                      </span>
+                      <span className="text-xs text-slate-500">Click to change</span>
+                    </div>
                   </div>
                 </div>
               </div>

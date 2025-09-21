@@ -55,11 +55,13 @@ export function useReadingPreferences() {
     getFromStorage(STORAGE_KEYS.READING_PREFERENCES, defaultPreferences)
   )
 
-  const updatePreferences = (updates: ReadingPreferencesUpdate) => {
+  const updatePreferences = (updates: ReadingPreferencesUpdate, showToast: boolean = true) => {
     const newPreferences = { ...preferences, ...updates }
     setPreferences(newPreferences)
     setToStorage(STORAGE_KEYS.READING_PREFERENCES, newPreferences)
-    toast.success('Reading preferences updated')
+    if (showToast) {
+      toast.success('Reading preferences updated')
+    }
   }
 
   return {
