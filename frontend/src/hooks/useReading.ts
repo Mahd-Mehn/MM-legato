@@ -17,8 +17,18 @@ export function useChapterReading(chapterId: string) {
   return useQuery({
     queryKey: ['chapter-reading', chapterId],
     queryFn: async (): Promise<ChapterReadingResponse> => {
-      const response = await api.get(`/api/v1/reading/chapters/${chapterId}`)
-      return response.data
+      try {
+        const response = await api.get(`/api/v1/reading/chapters/${chapterId}`)
+        return response.data
+      } catch (error: any) {
+        console.error('Chapter reading error:', error.response?.status, error.response?.data)
+        if (error.response?.status === 401) {
+          toast.error('Please log in to read this chapter')
+        } else if (error.response?.status === 404) {
+          toast.error('Chapter not found or access denied')
+        }
+        throw error
+      }
     },
     enabled: !!chapterId,
   })

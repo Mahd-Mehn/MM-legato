@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { CreateBookModal } from '@/components/writer/create-book-modal'
 import { ChapterCard } from '@/components/writer/chapter-card'
+import { BookCharacterManager } from '@/components/writer/book-character-manager'
 import { useChapters } from '@/hooks/useChapters'
 import { bookAPI } from '@/lib/api'
 import { Book } from '@/types/book'
@@ -256,6 +257,11 @@ export default function BookManagementPage() {
           </div>
         )}
       </Card>
+
+      <Separator />
+
+      {/* Character Management Section */}
+      <BookCharacterManager bookId={bookId} />
 
       <Separator />
 

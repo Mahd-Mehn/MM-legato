@@ -12,7 +12,8 @@ import {
   PenTool, 
   Shield,
   BarChart3,
-  Users
+  Users,
+  UserCircle
 } from 'lucide-react'
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
 
 const writerNavigation = [
   { name: 'Writer Dashboard', href: '/dashboard/writer', icon: PenTool },
+  { name: 'Characters', href: '/dashboard/writer/characters', icon: UserCircle },
 ]
 
 const specialNavigation = [
