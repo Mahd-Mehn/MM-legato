@@ -1,0 +1,92 @@
+# Core web framework
+fastapi==0.104.1
+uvicorn==0.24.0
+starlette==0.27.0
+
+# Database
+sqlalchemy==2.0.41
+psycopg2-binary==2.9.10
+alembic==1.16.4
+motor==3.3.2
+pymongo==4.6.0
+redis==5.0.1
+
+# AI/LLM packages
+openai==1.93.2
+langchain==0.3.27
+langchain-core==0.3.72
+langchain-google-genai==2.0.10
+langchain-text-splitters==0.3.9
+langgraph==0.6.3
+langgraph-checkpoint==2.1.1
+langgraph-prebuilt==0.6.3
+langgraph-sdk==0.2.0
+langsmith==0.4.8
+llama-index==0.12.47
+llama-index-core==0.12.52.post1
+llama-index-embeddings-openai==0.3.1
+llama-index-llms-openai==0.4.7
+google-generativeai==0.8.5
+elevenlabs==2.16.0
+tiktoken==0.9.0
+
+# Blockchain
+web3==7.13.0
+eth-account==0.13.7
+eth-hash==0.7.1
+eth-keyfile==0.8.1
+eth-keys==0.7.0
+eth-rlp==2.2.0
+eth-typing==5.2.1
+eth-utils==5.3.0
+eth_abi==5.2.0
+tronpy==0.6.1
+
+# HTTP clients
+httpx==0.28.1
+aiohttp==3.12.13
+requests==2.32.4
+
+# Data processing
+pandas==2.2.3
+numpy==2.3.1
+pillow==10.4.0
+
+# Authentication & Security
+bcrypt==4.3.0
+passlib==1.7.4
+python-jose==3.5.0
+cryptography==45.0.5
+
+# Utilities
+pydantic==2.11.7
+pydantic-settings==2.10.1
+python-dotenv==1.1.1
+python-multipart==0.0.20
+jinja2==3.1.6
+click==8.1.8
+python-dateutil==2.9.0.post0
+pytz==2025.2
+
+# File handling
+aiofiles==24.1.0
+pypdf==5.7.0
+
+# Task scheduling
+apscheduler==3.11.0
+
+# Payment processing
+stripe==12.5.1
+
+# Cloud services
+boto3==1.40.3
+cloudinary==1.44.1
+
+# Vector database
+pinecone-client==2.2.4
+qdrant-client==1.15.1
+
+# Development (optional - remove if not needed in production)
+# pytest==7.4.3
+# black==25.1.0
+# mypy==1.17.1
