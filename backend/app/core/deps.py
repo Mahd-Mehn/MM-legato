@@ -41,3 +41,24 @@ def get_current_writer(current_user: User = Depends(get_current_user)) -> User:
             detail="Writer access required"
         )
     return current_user
+
+def get_current_user_optional(
+    db: Session = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))
+) -> User | None:
+    """Get current authenticated user, or None if not authenticated."""
+    if not credentials:
+        return None
+    
+    try:
+        token = credentials.credentials
+        payload = verify_token(token)
+        
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        
+        user = AuthService.get_user_by_email(db, email=email)
+        return user
+    except:
+        return None

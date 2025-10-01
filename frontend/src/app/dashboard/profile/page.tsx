@@ -12,8 +12,9 @@ import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Separator } from '@/components/ui/separator'
-import { Upload, User, Loader2, Coins } from 'lucide-react'
+import { Upload, User, Loader2, Coins, Shield } from 'lucide-react'
 import { useProfile, useUpdateProfile, useUploadProfilePicture } from '@/hooks/useProfile'
+import { VaultPasswordDialog } from '@/components/auth/vault-password-dialog'
 import { toast } from 'sonner'
 
 const profileSchema = z.object({
@@ -252,6 +253,35 @@ export default function ProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* Security Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Security Settings</CardTitle>
+          <CardDescription>
+            Manage your account security and privacy settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-medium">Secret Vault Password</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Set a password to protect your private book collection
+              </p>
+            </div>
+            <VaultPasswordDialog>
+              <Button variant="outline" size="sm">
+                <Shield className="w-4 h-4 mr-2" />
+                {profile.has_vault_password ? 'Change Vault Password' : 'Set Vault Password'}
+              </Button>
+            </VaultPasswordDialog>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -13,7 +13,8 @@ import {
   Shield,
   BarChart3,
   Users,
-  UserCircle
+  UserCircle,
+  AlertTriangle
 } from 'lucide-react'
 
 const navigation = [
@@ -27,10 +28,11 @@ const navigation = [
 const writerNavigation = [
   { name: 'Writer Dashboard', href: '/dashboard/writer', icon: PenTool },
   { name: 'Characters', href: '/dashboard/writer/characters', icon: UserCircle },
+  { name: 'Moderation', href: '/dashboard/writer/moderation', icon: AlertTriangle },
 ]
 
 const specialNavigation = [
-  { name: 'Secret Vault', href: '/dashboard/vault', icon: Shield },
+  { name: 'Secret Vault', href: '/vault', icon: Shield },
 ]
 
 interface SidebarProps {

@@ -28,7 +28,7 @@ class BookService:
         
         db_book = Book(
             **book_data.dict(exclude={"tags"}),
-            author_id=author_id,
+            author_id=str(author_id),
             license_hash=license_hash,
             tags=tags_json
         )
@@ -40,7 +40,7 @@ class BookService:
 
     def get_book_by_id(self, book_id: UUID, include_chapters: bool = False) -> Optional[Book]:
         """Get a book by ID with optional chapter loading"""
-        query = self.db.query(Book).filter(Book.id == book_id)
+        query = self.db.query(Book).filter(Book.id == str(book_id))
         
         if include_chapters:
             query = query.options(
@@ -95,7 +95,7 @@ class BookService:
             )
             
         if filters.author_id:
-            query = query.filter(Book.author_id == filters.author_id)
+            query = query.filter(Book.author_id == str(filters.author_id))
 
         # Tag filtering (include and exclude)
         if filters.tags:
@@ -127,8 +127,8 @@ class BookService:
     def update_book(self, book_id: UUID, book_data: BookUpdate, author_id: UUID) -> Optional[Book]:
         """Update a book (only by author)"""
         book = self.db.query(Book).filter(
-            Book.id == book_id,
-            Book.author_id == author_id
+            Book.id == str(book_id),
+            Book.author_id == str(author_id)
         ).first()
         
         if not book:
@@ -150,8 +150,8 @@ class BookService:
     def delete_book(self, book_id: UUID, author_id: UUID) -> bool:
         """Delete a book (only by author)"""
         book = self.db.query(Book).filter(
-            Book.id == book_id,
-            Book.author_id == author_id
+            Book.id == str(book_id),
+            Book.author_id == str(author_id)
         ).first()
         
         if not book:
@@ -165,8 +165,8 @@ class BookService:
         """Create a new chapter (only by book author)"""
         # Verify book ownership
         book = self.db.query(Book).filter(
-            Book.id == book_id,
-            Book.author_id == author_id
+            Book.id == str(book_id),
+            Book.author_id == str(author_id)
         ).first()
         
         if not book:
@@ -174,7 +174,7 @@ class BookService:
             
         # Check if chapter number already exists
         existing_chapter = self.db.query(Chapter).filter(
-            Chapter.book_id == book_id,
+            Chapter.book_id == str(book_id),
             Chapter.chapter_number == chapter_data.chapter_number
         ).first()
         
@@ -183,7 +183,7 @@ class BookService:
             
         # Create chapter with book_id
         chapter_dict = chapter_data.dict()
-        chapter_dict['book_id'] = book_id
+        chapter_dict['book_id'] = str(book_id)
         db_chapter = Chapter(**chapter_dict)
         
         # Calculate word count
@@ -197,18 +197,18 @@ class BookService:
     def get_book_chapters(self, book_id: UUID) -> List[Chapter]:
         """Get all chapters for a book"""
         return self.db.query(Chapter).filter(
-            Chapter.book_id == book_id
+            Chapter.book_id == str(book_id)
         ).order_by(Chapter.chapter_number).all()
 
     def get_chapter_by_id(self, chapter_id: UUID) -> Optional[Chapter]:
         """Get a chapter by ID"""
-        return self.db.query(Chapter).filter(Chapter.id == chapter_id).first()
+        return self.db.query(Chapter).filter(Chapter.id == str(chapter_id)).first()
 
     def update_chapter(self, chapter_id: UUID, chapter_data: ChapterUpdate, author_id: UUID) -> Optional[Chapter]:
         """Update a chapter (only by book author)"""
         chapter = self.db.query(Chapter).join(Book).filter(
-            Chapter.id == chapter_id,
-            Book.author_id == author_id
+            Chapter.id == str(chapter_id),
+            Book.author_id == str(author_id)
         ).first()
         
         if not chapter:
@@ -230,8 +230,8 @@ class BookService:
     def delete_chapter(self, chapter_id: UUID, author_id: UUID) -> bool:
         """Delete a chapter (only by book author)"""
         chapter = self.db.query(Chapter).join(Book).filter(
-            Chapter.id == chapter_id,
-            Book.author_id == author_id
+            Chapter.id == str(chapter_id),
+            Book.author_id == str(author_id)
         ).first()
         
         if not chapter:
@@ -246,7 +246,7 @@ class BookService:
         stats = self.db.query(
             func.count(Chapter.id).label("chapter_count"),
             func.sum(Chapter.word_count).label("total_word_count")
-        ).filter(Chapter.book_id == book_id).first()
+        ).filter(Chapter.book_id == str(book_id)).first()
         
         return {
             "chapter_count": stats.chapter_count or 0,

@@ -14,7 +14,21 @@ async def get_user_profile(
     db: Session = Depends(get_db)
 ):
     """Get current user's profile"""
-    return current_user
+    # Create a dict from the user object and add vault password status
+    user_dict = {
+        "id": current_user.id,
+        "email": current_user.email,
+        "username": current_user.username,
+        "bio": current_user.bio,
+        "profile_picture_url": current_user.profile_picture_url,
+        "is_writer": current_user.is_writer,
+        "theme_preference": current_user.theme_preference,
+        "coin_balance": current_user.coin_balance,
+        "has_vault_password": current_user.vault_password_hash is not None,
+        "created_at": current_user.created_at,
+        "updated_at": current_user.updated_at
+    }
+    return user_dict
 
 @router.put("/profile", response_model=UserProfile)
 async def update_user_profile(

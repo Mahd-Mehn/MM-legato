@@ -23,20 +23,34 @@ class ReadingService:
     def get_chapter_for_reading(self, chapter_id: UUID, user_id: UUID) -> Optional[ChapterReadingResponse]:
         """Get chapter content and metadata for reading interface"""
         
-        # Get chapter with book and author info
-        chapter = self.db.query(Chapter).join(Book).join(User).filter(
-            Chapter.id == chapter_id,
-            Chapter.is_published == True,
-            Book.is_published == True
-        ).first()
+        # Convert UUID to string for database comparison
+        chapter_id_str = str(chapter_id)
+        user_id_str = str(user_id)
+        
+        print(f"DEBUG: Looking for chapter_id: {chapter_id_str}")
+        
+        # Get chapter with book and author info - use string comparison
+        chapter = self.db.query(Chapter)\
+            .join(Book, Chapter.book_id == Book.id)\
+            .join(User, Book.author_id == User.id)\
+            .filter(
+                Chapter.id == chapter_id_str,
+                Chapter.is_published == True,
+                Book.is_published == True
+            ).first()
         
         if not chapter:
-            # Try to find the chapter without published filters for debugging
-            debug_chapter = self.db.query(Chapter).filter(Chapter.id == chapter_id).first()
+            # Debug: try to find the chapter without filters
+            debug_chapter = self.db.query(Chapter).filter(Chapter.id == chapter_id_str).first()
             if debug_chapter:
-                print(f"DEBUG: Chapter {chapter_id} exists but is_published={debug_chapter.is_published}, book_published={debug_chapter.book.is_published if debug_chapter.book else 'No book'}")
+                print(f"DEBUG: Chapter {chapter_id_str} exists but is_published={debug_chapter.is_published}")
+                book = self.db.query(Book).filter(Book.id == debug_chapter.book_id).first()
+                if book:
+                    print(f"DEBUG: Book is_published={book.is_published}")
+                else:
+                    print(f"DEBUG: Book not found")
             else:
-                print(f"DEBUG: Chapter {chapter_id} not found in database")
+                print(f"DEBUG: Chapter {chapter_id_str} not found in database")
             return None
         
         # Check if user has access to this chapter
@@ -46,7 +60,7 @@ class ReadingService:
         # Get user's bookmark for this chapter
         try:
             bookmark = self.db.query(Bookmark).filter(
-                and_(Bookmark.user_id == str(user_id), Bookmark.chapter_id == str(chapter_id))
+                and_(Bookmark.user_id == user_id_str, Bookmark.chapter_id == chapter_id_str)
             ).first()
         except Exception as e:
             print(f"DEBUG: Bookmark query error: {e}")
@@ -117,13 +131,16 @@ class ReadingService:
         """Get chapter content by slug/title for reading interface"""
         
         # Find chapter by title (treating slug as title for now)
-        chapter = self.db.query(Chapter).join(Book).join(User).filter(
-            and_(
-                Chapter.title.ilike(f"%{chapter_slug}%"),
-                Chapter.is_published == True,
-                Book.is_published == True
-            )
-        ).first()
+        chapter = self.db.query(Chapter)\
+            .join(Book, Chapter.book_id == Book.id)\
+            .join(User, Book.author_id == User.id)\
+            .filter(
+                and_(
+                    Chapter.title.ilike(f"%{chapter_slug}%"),
+                    Chapter.is_published == True,
+                    Book.is_published == True
+                )
+            ).first()
         
         if not chapter:
             return None
@@ -149,9 +166,12 @@ class ReadingService:
     def _get_book_navigation_internal(self, book_id: UUID, user_id: UUID) -> Optional[BookNavigationResponse]:
         """Internal method to get book navigation data"""
         
+        # Convert UUID to string for database comparison
+        book_id_str = str(book_id)
+        
         # Get book with chapters
         book = self.db.query(Book).filter(
-            and_(Book.id == book_id, Book.is_published == True)
+            and_(Book.id == book_id_str, Book.is_published == True)
         ).first()
         
         if not book:
@@ -160,7 +180,7 @@ class ReadingService:
         # Get all published chapters for this book
         chapters = self.db.query(Chapter).filter(
             and_(
-                Chapter.book_id == book_id,
+                Chapter.book_id == book_id_str,
                 Chapter.is_published == True
             )
         ).order_by(Chapter.chapter_number).all()
@@ -184,9 +204,13 @@ class ReadingService:
     def create_or_update_bookmark(self, chapter_id: UUID, user_id: UUID, position_percentage: Decimal) -> Optional[BookmarkResponse]:
         """Create or update a bookmark for a chapter"""
         
+        # Convert UUIDs to strings for database comparison
+        chapter_id_str = str(chapter_id)
+        user_id_str = str(user_id)
+        
         # Verify chapter exists and is accessible
-        chapter = self.db.query(Chapter).join(Book).filter(
-            Chapter.id == chapter_id,
+        chapter = self.db.query(Chapter).join(Book, Chapter.book_id == Book.id).filter(
+            Chapter.id == chapter_id_str,
             Chapter.is_published == True,
             Book.is_published == True
         ).first()
@@ -196,7 +220,7 @@ class ReadingService:
         
         # Check if bookmark already exists
         bookmark = self.db.query(Bookmark).filter(
-            and_(Bookmark.user_id == str(user_id), Bookmark.chapter_id == str(chapter_id))
+            and_(Bookmark.user_id == user_id_str, Bookmark.chapter_id == chapter_id_str)
         ).first()
         
         if bookmark:
@@ -205,8 +229,8 @@ class ReadingService:
         else:
             # Create new bookmark
             bookmark = Bookmark(
-                user_id=str(user_id),
-                chapter_id=str(chapter_id),
+                user_id=user_id_str,
+                chapter_id=chapter_id_str,
                 position_percentage=position_percentage
             )
             self.db.add(bookmark)
@@ -226,8 +250,12 @@ class ReadingService:
     def get_user_bookmark(self, chapter_id: UUID, user_id: UUID) -> Optional[BookmarkResponse]:
         """Get user's bookmark for a specific chapter"""
         
+        # Convert UUIDs to strings for database comparison
+        chapter_id_str = str(chapter_id)
+        user_id_str = str(user_id)
+        
         bookmark = self.db.query(Bookmark).filter(
-            and_(Bookmark.user_id == str(user_id), Bookmark.chapter_id == str(chapter_id))
+            and_(Bookmark.user_id == user_id_str, Bookmark.chapter_id == chapter_id_str)
         ).first()
         
         if not bookmark:
@@ -245,8 +273,12 @@ class ReadingService:
     def delete_bookmark(self, chapter_id: UUID, user_id: UUID) -> bool:
         """Delete user's bookmark for a chapter"""
         
+        # Convert UUIDs to strings for database comparison
+        chapter_id_str = str(chapter_id)
+        user_id_str = str(user_id)
+        
         bookmark = self.db.query(Bookmark).filter(
-            and_(Bookmark.user_id == str(user_id), Bookmark.chapter_id == str(chapter_id))
+            and_(Bookmark.user_id == user_id_str, Bookmark.chapter_id == chapter_id_str)
         ).first()
         
         if not bookmark:
@@ -259,10 +291,15 @@ class ReadingService:
     def update_reading_progress(self, user_id: UUID, progress_data: ReadingProgressCreate) -> Optional[ReadingProgressResponse]:
         """Update or create reading progress for a user"""
         
+        # Convert UUIDs to strings for database comparison
+        user_id_str = str(user_id)
+        chapter_id_str = str(progress_data.chapter_id)
+        book_id_str = str(progress_data.book_id)
+        
         # Verify chapter and book exist and are accessible
-        chapter = self.db.query(Chapter).join(Book).filter(
-            Chapter.id == progress_data.chapter_id,
-            Book.id == progress_data.book_id,
+        chapter = self.db.query(Chapter).join(Book, Chapter.book_id == Book.id).filter(
+            Chapter.id == chapter_id_str,
+            Book.id == book_id_str,
             Chapter.is_published == True,
             Book.is_published == True
         ).first()
@@ -273,21 +310,21 @@ class ReadingService:
         # Check if progress already exists for this book
         progress = self.db.query(ReadingProgress).filter(
             and_(
-                ReadingProgress.user_id == str(user_id),
-                ReadingProgress.book_id == str(progress_data.book_id)
+                ReadingProgress.user_id == user_id_str,
+                ReadingProgress.book_id == book_id_str
             )
         ).first()
         
         if progress:
             # Update existing progress
-            progress.chapter_id = str(progress_data.chapter_id)
+            progress.chapter_id = chapter_id_str
             progress.position_percentage = progress_data.position_percentage
         else:
             # Create new progress
             progress = ReadingProgress(
-                user_id=str(user_id),
-                book_id=str(progress_data.book_id),
-                chapter_id=str(progress_data.chapter_id),
+                user_id=user_id_str,
+                book_id=book_id_str,
+                chapter_id=chapter_id_str,
                 position_percentage=progress_data.position_percentage
             )
             self.db.add(progress)
@@ -370,10 +407,14 @@ class ReadingService:
     def get_user_reading_progress(self, user_id: UUID, book_id: UUID) -> Optional[ReadingProgressResponse]:
         """Get user's reading progress for a specific book"""
         
+        # Convert UUIDs to strings for database comparison
+        user_id_str = str(user_id)
+        book_id_str = str(book_id)
+        
         progress = self.db.query(ReadingProgress).filter(
             and_(
-                ReadingProgress.user_id == str(user_id),
-                ReadingProgress.book_id == str(book_id)
+                ReadingProgress.user_id == user_id_str,
+                ReadingProgress.book_id == book_id_str
             )
         ).first()
         

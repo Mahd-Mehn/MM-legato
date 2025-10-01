@@ -13,6 +13,7 @@ import { QuoteDialog } from './quote-dialog'
 import { useReadingPreferences, useBookNavigation, useBookmark } from '../../hooks/useReading'
 import { useReadingProgress } from '../../hooks/useReadingProgress'
 import { useAdvancedReading } from '../../hooks/useAdvancedReading'
+import { useReadingMutations } from '../../hooks/useMutations'
 import { ChapterReadingResponse } from '../../types/reading'
 import { getCachedBookmark, setCachedBookmark } from '../../lib/bookmarkCache'
 import { toast } from 'sonner'
@@ -31,7 +32,6 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
   // Advanced reading features state
   const [showAudioPlayer, setShowAudioPlayer] = useState(false)
   const [chapterAudio, setChapterAudio] = useState<any>(null)
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false)
   const [showTranslationDialog, setShowTranslationDialog] = useState(false)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [selectedTextForAction, setSelectedTextForAction] = useState('')
@@ -42,7 +42,7 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
   const { data: preferences, updatePreferences } = useReadingPreferences()
   const { data: navigation } = useBookNavigation(chapterData.book_id)
   const { createBookmark } = useBookmark()
-  const { updateProgress } = useReadingProgress()
+  const { updateReadingProgress, createBookmark: createBookmarkMutation } = useReadingMutations()
   const {
     generateAudio,
     getChapterAudio,
@@ -72,20 +72,24 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
     saveTimeoutRef.current = setTimeout(() => {
       setIsSavingBookmark(true)
       
-      // Save bookmark
-      createBookmark({
-        chapter_id: chapterData.id,
-        position_percentage: progress
+      // Save bookmark using mutation
+      createBookmarkMutation.mutate({
+        chapterId: chapterData.id,
+        position: progress
       })
       
       // Update reading progress for continue reading functionality
-      updateProgress(chapterData.book_id, chapterData.id, progress)
+      updateReadingProgress.mutate({
+        chapterId: chapterData.id,
+        position: progress,
+        percentage: progress
+      })
       
       setLastSavedProgress(progress)
       // Hide saving indicator after a short delay
       setTimeout(() => setIsSavingBookmark(false), 1000)
     }, 3000) // Wait 3 seconds after user stops scrolling
-  }, [chapterData.id, chapterData.book_id, createBookmark, updateProgress, lastSavedProgress])
+  }, [chapterData.id, chapterData.book_id, createBookmark, lastSavedProgress, createBookmarkMutation, updateReadingProgress])
 
   // Handle scroll progress tracking
   useEffect(() => {
@@ -234,6 +238,62 @@ export function ReadingInterface({ chapterData }: ReadingInterfaceProps) {
       }
     }
   }, [chapterData.bookmark, chapterData.id])
+
+  // Handle scrolling to comments from notification links
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash && hash.startsWith('#comment-')) {
+      let attempts = 0
+      const maxAttempts = 10
+      
+      const scrollToComment = () => {
+        const commentElement = document.querySelector(hash)
+        if (commentElement) {
+          // Scroll to the comment with some offset for the header
+          commentElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          })
+          
+          // Add a highlight effect to the comment
+          commentElement.classList.add('highlight-comment')
+          setTimeout(() => {
+            commentElement.classList.remove('highlight-comment')
+          }, 3000)
+          
+          return true // Success
+        } else {
+          attempts++
+          if (attempts < maxAttempts) {
+            // Try again with increasing delay
+            setTimeout(scrollToComment, 500 * attempts)
+          }
+          return false
+        }
+      }
+      
+      // Start trying to scroll after initial render
+      setTimeout(scrollToComment, 100)
+      
+      // Also listen for DOM changes in case comments load later
+      const observer = new MutationObserver(() => {
+        if (scrollToComment()) {
+          observer.disconnect()
+        }
+      })
+      
+      // Observe the document for changes
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      })
+      
+      // Clean up observer after max attempts
+      setTimeout(() => {
+        observer.disconnect()
+      }, 15000) // 15 seconds max
+    }
+  }, [])
 
   // Apply reading preferences to document
   useEffect(() => {

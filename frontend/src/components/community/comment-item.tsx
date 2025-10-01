@@ -5,13 +5,13 @@ import { formatDistanceToNow } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,24 +21,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+
 import { Textarea } from '@/components/ui/textarea'
 import { Comment } from '@/types/comment'
-import { useDeleteComment, useLikeComment, useReportComment, useUpdateComment } from '@/hooks/useComments'
+import { useDeleteComment, useLikeComment, useUpdateComment } from '@/hooks/useComments'
 import { CommentForm } from './comment-form'
-import { 
-  Heart, 
-  MessageCircle, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
+import { ReportCommentDialog } from './ReportCommentDialog'
+import {
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Edit,
+  Trash2,
   Flag,
   Crown,
   Loader2
@@ -56,13 +50,11 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
   const [showEditForm, setShowEditForm] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showReportDialog, setShowReportDialog] = useState(false)
-  const [reportReason, setReportReason] = useState('')
   const [editContent, setEditContent] = useState(comment.content)
 
   const likeComment = useLikeComment()
   const deleteComment = useDeleteComment()
   const updateComment = useUpdateComment()
-  const reportComment = useReportComment()
 
   const handleLike = () => {
     likeComment.mutate(comment.id)
@@ -75,33 +67,31 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
 
   const handleEdit = () => {
     if (editContent.trim() && editContent !== comment.content) {
-      updateComment.mutate({ 
-        commentId: comment.id, 
-        content: editContent.trim() 
+      updateComment.mutate({
+        commentId: comment.id,
+        content: editContent.trim()
       })
     }
     setShowEditForm(false)
   }
 
-  const handleReport = () => {
-    if (reportReason.trim()) {
-      reportComment.mutate({ 
-        commentId: comment.id, 
-        reason: reportReason.trim() 
-      })
-      setShowReportDialog(false)
-      setReportReason('')
-    }
+  const handleReportSubmitted = () => {
+    setShowReportDialog(false)
+    // Optionally refresh comments or show success message
+    // The ReportCommentDialog handles the success toast
   }
 
   const canShowReplies = depth < maxDepth
   const hasReplies = comment.replies && comment.replies.length > 0
 
   return (
-    <div className={cn(
-      "space-y-3",
-      depth > 0 && "ml-6 pl-4 border-l-2 border-slate-200 dark:border-slate-700"
-    )}>
+    <div 
+      id={`comment-${comment.id}`}
+      className={cn(
+        "space-y-3",
+        depth > 0 && "ml-6 pl-4 border-l-2 border-slate-200 dark:border-slate-700"
+      )}
+    >
       <div className="flex gap-3">
         <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={comment.author.profile_picture_url} />
@@ -116,27 +106,27 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
             <span className="font-medium text-sm text-slate-900 dark:text-white">
               {comment.author.username}
             </span>
-            
+
             {comment.author.is_book_author && (
               <Badge variant="default" className="text-xs bg-purple-600 hover:bg-purple-700">
                 <Crown className="h-3 w-3 mr-1" />
                 Author
               </Badge>
             )}
-            
+
             {comment.author.is_writer && !comment.author.is_book_author && (
               <Badge variant="secondary" className="text-xs">
                 <Crown className="h-3 w-3 mr-1" />
                 Writer
               </Badge>
             )}
-            
+
             {comment.is_liked_by_author && (
               <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">
                 ❤️ Liked by Author
               </Badge>
             )}
-            
+
             <span className="text-xs text-slate-500">
               {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
             </span>
@@ -155,7 +145,7 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => setShowDeleteDialog(true)}
                       className="text-red-600"
                     >
@@ -183,8 +173,8 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
                 className="min-h-[60px]"
               />
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={handleEdit}
                   disabled={updateComment.isPending || !editContent.trim()}
                 >
@@ -194,9 +184,9 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
                     'Save'
                   )}
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => {
                     setShowEditForm(false)
                     setEditContent(comment.content)
@@ -285,7 +275,7 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -296,42 +286,14 @@ export function CommentItem({ comment, depth = 0, maxDepth = 3 }: CommentItemPro
       </AlertDialog>
 
       {/* Report Dialog */}
-      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Report Comment</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for reporting this comment.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Reason for reporting..."
-            value={reportReason}
-            onChange={(e) => setReportReason(e.target.value)}
-            className="min-h-[100px]"
-          />
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowReportDialog(false)
-                setReportReason('')
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleReport}
-              disabled={reportComment.isPending || !reportReason.trim()}
-            >
-              {reportComment.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Report
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {showReportDialog && (
+        <ReportCommentDialog
+          commentId={comment.id}
+          open={showReportDialog}
+          onOpenChange={setShowReportDialog}
+          onReportSubmitted={handleReportSubmitted}
+        />
+      )}
     </div>
   )
 }

@@ -1,8 +1,10 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import { useEffect } from 'react'
 import { ReadingInterface } from '@/components/reading/reading-interface'
 import { useChapterReading } from '../../../../hooks/useReading'
+import { useViewTracking } from '@/hooks/useAnalytics'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
@@ -10,8 +12,19 @@ import { AlertCircle } from 'lucide-react'
 export default function ReadingPage() {
   const params = useParams()
   const chapterId = params.chapterId as string
+  const bookId = params.bookId as string
 
   const { data: chapterData, isLoading, error } = useChapterReading(chapterId)
+  const { trackBookView, trackChapterView } = useViewTracking()
+
+  // Track views when chapter data is loaded
+  useEffect(() => {
+    if (chapterData && chapterId && bookId) {
+      // Track both book and chapter views
+      trackBookView(bookId)
+      trackChapterView(chapterId)
+    }
+  }, [chapterData, chapterId, bookId, trackBookView, trackChapterView])
 
   if (isLoading) {
     return (

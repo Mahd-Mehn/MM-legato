@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Coins, Search, Settings, Moon, Sun, LogOut, Shield, Menu, Maximize2, Minimize2, User } from 'lucide-react'
+import { Coins, Search, Settings, Moon, Sun, LogOut, Shield, Menu, Maximize2, Minimize2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from 'next-themes'
 import { useSession, signOut } from 'next-auth/react'
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { NotificationBell } from '../ui/notification-bell'
 
 export function TopNavigation() {
   const { theme, setTheme } = useTheme()
@@ -112,12 +113,7 @@ export function TopNavigation() {
           </Button>
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-              3
-            </span>
-          </Button>
+          <NotificationBell />
 
           {/* User Menu */}
           <DropdownMenu>

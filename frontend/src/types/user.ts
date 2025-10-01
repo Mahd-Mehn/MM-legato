@@ -7,6 +7,7 @@ export interface User {
   is_writer: boolean
   theme_preference: string
   coin_balance: number
+  has_vault_password: boolean
   created_at: string
   updated_at: string
 }

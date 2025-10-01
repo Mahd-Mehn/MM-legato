@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Grid, List, BookOpen, History } from 'lucide-react'
+import { Grid, List, BookOpen, History, Shield } from 'lucide-react'
 import { LibraryBookCard } from '@/components/library/library-book-card'
 import { ReadingHistoryCard } from '@/components/library/reading-history-card'
 import { useLibrary, useReadingHistory } from '@/hooks/useLibrary'
@@ -116,17 +116,35 @@ export default function LibraryPage() {
                 </div>
               )}
 
-              {/* Vault Books */}
+              {/* Vault Books Preview */}
               {vaultBooks.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Secret Vault</h3>
-                  <div className={viewMode === 'grid' 
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                    : "space-y-4"
-                  }>
-                    {vaultBooks.map((book) => (
-                      <LibraryBookCard key={book.id} book={book} />
-                    ))}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      <Shield className="h-5 w-5 mr-2 text-purple-600" />
+                      Secret Vault ({vaultBooks.length} books)
+                    </h3>
+                    <Link href="/vault">
+                      <Button variant="outline" size="sm">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Access Vault
+                      </Button>
+                    </Link>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-6 text-center">
+                    <Shield className="h-12 w-12 text-purple-600 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground mb-3">
+                      You have {vaultBooks.length} book{vaultBooks.length !== 1 ? 's' : ''} in your Secret Vault
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Enter your vault password to view and access these private books
+                    </p>
+                    <Link href="/vault">
+                      <Button size="sm">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Open Vault
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               )}

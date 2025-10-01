@@ -1,3 +1,6 @@
 export { CommentSection } from './comment-section'
 export { CommentForm } from './comment-form'
 export { CommentItem } from './comment-item'
+export { ReviewForm } from './review-form'
+export { ReviewItem } from './review-item'
+export { ReviewsSection } from './reviews-section'

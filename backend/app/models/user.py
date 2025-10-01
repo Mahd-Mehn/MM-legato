@@ -1,6 +1,5 @@
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
 from app.models.base import Base
@@ -8,7 +7,7 @@ from app.models.base import Base
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     username = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -27,3 +26,13 @@ class User(Base):
     bookmarks = relationship("Bookmark", back_populates="user")
     reading_preferences = relationship("ReadingPreferences", back_populates="user", uselist=False)
     reading_progress = relationship("ReadingProgress", back_populates="user")
+    comments = relationship("Comment", back_populates="user")
+    comment_likes = relationship("CommentLike", back_populates="user")
+    book_reviews = relationship("BookReview", back_populates="user")
+    review_likes = relationship("ReviewLike", back_populates="user")
+    characters = relationship("Character", back_populates="author")
+    filed_reports = relationship("CommentReport", foreign_keys="CommentReport.reporter_id", back_populates="reporter")
+    reviewed_reports = relationship("CommentReport", foreign_keys="CommentReport.reviewed_by", back_populates="reviewer")
+    moderation_actions = relationship("ModerationLog", back_populates="moderator")
+    notifications = relationship("Notification", back_populates="user")
+    earnings = relationship("WriterEarnings", foreign_keys="WriterEarnings.writer_id")

@@ -107,5 +107,47 @@ class MediaService:
             if isinstance(e, HTTPException):
                 raise e
             raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+    
+    @staticmethod
+    async def upload_character_image(file: UploadFile, character_id: str) -> Dict[str, Any]:
+        """Upload character image to Cloudinary"""
+        try:
+            # Validate file type
+            if not file.content_type or not file.content_type.startswith('image/'):
+                raise HTTPException(status_code=400, detail="File must be an image")
+            
+            # Validate file size (5MB max for character images)
+            content = await file.read()
+            file_size = len(content)
+            
+            if file_size > 5 * 1024 * 1024:  # 5MB
+                raise HTTPException(status_code=400, detail="File size must be less than 5MB")
+            
+            # Generate unique filename
+            public_id = f"character_images/{character_id}_{uuid.uuid4().hex}"
+            
+            # Upload to Cloudinary
+            result = cloudinary.uploader.upload(
+                content,
+                public_id=public_id,
+                folder="legato/character_images",
+                transformation=[
+                    {'width': 400, 'height': 400, 'crop': 'fill', 'gravity': 'face'},
+                    {'quality': 'auto', 'fetch_format': 'auto'}
+                ],
+                allowed_formats=['jpg', 'jpeg', 'png', 'webp']
+            )
+            
+            return {
+                'url': result['secure_url'],
+                'public_id': result['public_id'],
+                'width': result['width'],
+                'height': result['height']
+            }
+            
+        except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
 
 media_service = MediaService()

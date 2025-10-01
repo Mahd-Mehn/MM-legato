@@ -8,6 +8,7 @@ import { WriterBookCard } from '@/components/writer/writer-book-card'
 import { useWriterBooks } from '@/hooks/useWriterBooks'
 import { Plus, BookOpen, Eye, DollarSign, Users, Loader2 } from 'lucide-react'
 import { Book } from '@/types/book'
+import { AnalyticsOverview } from '@/components/analytics/analytics-overview'
 
 export default function WriterDashboardPage() {
   const { 
@@ -207,15 +208,7 @@ export default function WriterDashboardPage() {
 
           {/* Analytics Tab */}
           {activeTab === 'analytics' && (
-            <div className="text-center py-12">
-              <DollarSign className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-                Analytics Coming Soon
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400">
-                Detailed analytics and insights for your books will be available here.
-              </p>
-            </div>
+            <AnalyticsOverview />
           )}
         </>
       )}

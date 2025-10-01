@@ -27,11 +27,13 @@ export interface ReadingHistoryBook {
   is_in_library: boolean
 }
 
-export function useLibrary() {
+export function useLibrary(includeVault: boolean = true) {
   return useQuery({
-    queryKey: ['library'],
+    queryKey: ['library', includeVault],
     queryFn: async (): Promise<LibraryBook[]> => {
-      const response = await api.get('/api/v1/library/')
+      const response = await api.get('/api/v1/library/', {
+        params: { include_vault: includeVault }
+      })
       return response.data
     },
   })

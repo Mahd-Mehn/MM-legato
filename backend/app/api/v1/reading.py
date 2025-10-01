@@ -158,12 +158,16 @@ async def debug_chapters(
     from app.models.book import Chapter, Book
     from app.models.user import User
     
-    chapters = db.query(Chapter).join(Book).join(User).all()
+    chapters = db.query(Chapter)\
+        .join(Book, Chapter.book_id == Book.id)\
+        .join(User, Book.author_id == User.id)\
+        .all()
     
     result = []
     for chapter in chapters:
         result.append({
             "id": str(chapter.id),
+            "id_type": str(type(chapter.id)),
             "title": chapter.title,
             "chapter_number": chapter.chapter_number,
             "is_published": chapter.is_published,
@@ -173,7 +177,19 @@ async def debug_chapters(
             "author": chapter.book.author.username
         })
     
-    return {"chapters": result, "total": len(result)}
+    # Also test direct lookup of the specific chapter
+    target_id = "4423cc95-c6c2-49b0-967d-998cca4c6bc9"
+    direct_lookup = db.query(Chapter).filter(Chapter.id == target_id).first()
+    
+    return {
+        "chapters": result, 
+        "total": len(result),
+        "direct_lookup_test": {
+            "target_id": target_id,
+            "found": direct_lookup is not None,
+            "found_id": str(direct_lookup.id) if direct_lookup else None
+        }
+    }
 
 @router.get("/debug/progress")
 async def debug_progress(
@@ -244,6 +260,67 @@ async def debug_simple_progress(
         "user_id_searched": str(current_user.id),
         "total_in_db": len(all_progress)
     }
+
+@router.get("/debug/test-chapter/{chapter_id}")
+async def debug_test_chapter(
+    chapter_id: str,
+    db: Session = Depends(get_db)
+):
+    """Debug endpoint to test chapter lookup without authentication"""
+    from uuid import UUID
+    from app.models.book import Chapter, Book
+    from app.models.user import User
+    
+    try:
+        # Test both string and UUID lookups
+        chapter_uuid = UUID(chapter_id)
+        
+        # Test 1: Direct chapter lookup with string
+        chapter_str = db.query(Chapter).filter(Chapter.id == chapter_id).first()
+        
+        # Test 2: Direct chapter lookup with UUID
+        chapter_uuid_lookup = db.query(Chapter).filter(Chapter.id == chapter_uuid).first()
+        
+        # Test 3: Get all chapters and find by ID
+        all_chapters = db.query(Chapter).all()
+        matching_chapters = [c for c in all_chapters if str(c.id) == chapter_id]
+        
+        return {
+            "chapter_id": chapter_id,
+            "chapter_uuid": str(chapter_uuid),
+            "tests": {
+                "string_lookup_success": chapter_str is not None,
+                "uuid_lookup_success": chapter_uuid_lookup is not None,
+                "found_in_all_chapters": len(matching_chapters) > 0,
+                "total_chapters": len(all_chapters)
+            },
+            "matching_chapters": [
+                {
+                    "id": str(c.id),
+                    "title": c.title,
+                    "id_matches": str(c.id) == chapter_id
+                } for c in matching_chapters
+            ] if matching_chapters else [],
+            "first_few_chapters": [
+                {
+                    "id": str(c.id),
+                    "title": c.title
+                } for c in all_chapters[:3]
+            ]
+        }
+        
+    except ValueError as e:
+        return {
+            "chapter_id": chapter_id,
+            "error": f"Invalid UUID format: {e}",
+            "found": False
+        }
+    except Exception as e:
+        return {
+            "chapter_id": chapter_id,
+            "error": f"Unexpected error: {str(e)}",
+            "found": False
+        }
 
 @router.get("/debug/books")
 async def debug_books(

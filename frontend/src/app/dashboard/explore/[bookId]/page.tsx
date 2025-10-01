@@ -1,17 +1,21 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, Clock, Coins, Play, Star, User } from 'lucide-react'
+import { ArrowLeft, BookOpen, Clock, Coins, Play, Star, User, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBook } from '@/hooks/useBooks'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AddToLibraryButton } from '@/components/library/add-to-library-button'
+import { ReviewsSection } from '@/components/community/reviews-section'
 
 export default function BookDetailPage() {
   const params = useParams()
   const bookId = params.bookId as string
+  const [activeTab, setActiveTab] = useState('overview')
   
   const { book, loading, error } = useBook(bookId, true)
 
@@ -153,101 +157,121 @@ export default function BookDetailPage() {
             </div>
           </div>
 
-          {/* Genre and Tags */}
-          {(book.genre || (book.tags && book.tags.length > 0)) && (
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-                Genre & Tags
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {book.genre && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm rounded-full">
-                    {book.genre}
-                  </span>
-                )}
-                {book.tags?.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-sm rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Reviews
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Description */}
-          {book.description && (
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
-                Description
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                {book.description}
-              </p>
-            </div>
-          )}
+            <TabsContent value="overview" className="space-y-6 mt-6">
+              {/* Genre and Tags */}
+              {(book.genre || (book.tags && book.tags.length > 0)) && (
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                    Genre & Tags
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {book.genre && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm rounded-full">
+                        {book.genre}
+                      </span>
+                    )}
+                    {book.tags?.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 text-sm rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {/* Chapters List */}
-          {book.chapters && book.chapters.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
-                Chapters ({book.chapters.length})
-              </h3>
-              <div className="space-y-2">
-                {book.chapters
-                  .sort((a, b) => a.chapter_number - b.chapter_number)
-                  .map((chapter) => (
-                    <Card key={chapter.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-slate-900 dark:text-white">
-                            Chapter {chapter.chapter_number}: {chapter.title}
-                          </h4>
-                          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
-                            <span>{chapter.word_count?.toLocaleString() || 0} words</span>
-                            {chapter.is_published ? (
-                              <span className="text-green-600 dark:text-green-400">Published</span>
-                            ) : (
-                              <span className="text-yellow-600 dark:text-yellow-400">Draft</span>
+              {/* Description */}
+              {book.description && (
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                    Description
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {book.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Chapters List */}
+              {book.chapters && book.chapters.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
+                    Chapters ({book.chapters.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {book.chapters
+                      .sort((a, b) => a.chapter_number - b.chapter_number)
+                      .map((chapter) => (
+                        <Card key={chapter.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-slate-900 dark:text-white">
+                                Chapter {chapter.chapter_number}: {chapter.title}
+                              </h4>
+                              <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                <span>{chapter.word_count?.toLocaleString() || 0} words</span>
+                                {chapter.is_published ? (
+                                  <span className="text-green-600 dark:text-green-400">Published</span>
+                                ) : (
+                                  <span className="text-yellow-600 dark:text-yellow-400">Draft</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {chapter.is_published && (
+                              <div className="flex items-center gap-2">
+                                {book.pricing_model === 'per_chapter' && (
+                                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                                    {book.per_chapter_price} coins
+                                  </span>
+                                )}
+                                <Link href={`/reading/${bookId}/${chapter.id}`}>
+                                  <Button size="sm" variant="outline">
+                                    Read
+                                  </Button>
+                                </Link>
+                              </div>
                             )}
                           </div>
-                        </div>
-                        
-                        {chapter.is_published && (
-                          <div className="flex items-center gap-2">
-                            {book.pricing_model === 'per_chapter' && (
-                              <span className="text-sm text-slate-500 dark:text-slate-400">
-                                {book.per_chapter_price} coins
-                              </span>
-                            )}
-                            <Link href={`/reading/${bookId}/${chapter.id}`}>
-                              <Button size="sm" variant="outline">
-                                Read
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-              </div>
-            </div>
-          )}
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              )}
 
-          {/* No Chapters Message */}
-          {(!book.chapters || book.chapters.length === 0) && (
-            <Card className="p-8 text-center">
-              <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="font-medium text-slate-900 dark:text-white mb-2">
-                No chapters available yet
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400">
-                The author hasn't published any chapters for this book yet.
-              </p>
-            </Card>
-          )}
+              {/* No Chapters Message */}
+              {(!book.chapters || book.chapters.length === 0) && (
+                <Card className="p-8 text-center">
+                  <BookOpen className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <h3 className="font-medium text-slate-900 dark:text-white mb-2">
+                    No chapters available yet
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    The author hasn't published any chapters for this book yet.
+                  </p>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="reviews" className="mt-6">
+              <ReviewsSection bookId={bookId} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

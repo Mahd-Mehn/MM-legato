@@ -26,6 +26,7 @@ class UserProfile(BaseModel):
     is_writer: bool
     theme_preference: str
     coin_balance: int
+    has_vault_password: bool = False
     created_at: datetime
     updated_at: datetime
 

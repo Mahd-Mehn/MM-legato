@@ -7,5 +7,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 python-dotenv
-pydantic[email]clou
-dinary
+pydantic[email]
+cloudinary
+elevenlabs
+deep-translator
+pillow
+requests

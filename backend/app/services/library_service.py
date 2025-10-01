@@ -12,20 +12,24 @@ class LibraryService:
     def __init__(self, db: Session):
         self.db = db
     
-    def get_user_library(self, user_id: UUID) -> List[LibraryResponse]:
-        """Get all books in user's library (excluding soft-deleted)"""
-        library_entries = (
+    def get_user_library(self, user_id: UUID, include_vault: bool = True) -> List[LibraryResponse]:
+        """Get books in user's library (excluding soft-deleted)"""
+        query = (
             self.db.query(UserLibrary)
             .options(
                 joinedload(UserLibrary.book).joinedload(Book.author)
             )
             .filter(
-                UserLibrary.user_id == user_id,
+                UserLibrary.user_id == str(user_id),
                 UserLibrary.is_deleted == False
             )
-            .order_by(UserLibrary.created_at.desc())
-            .all()
         )
+        
+        # Filter vault books if requested
+        if not include_vault:
+            query = query.filter(UserLibrary.is_in_vault == False)
+        
+        library_entries = query.order_by(UserLibrary.created_at.desc()).all()
         
         return [
             LibraryResponse(
@@ -33,21 +37,22 @@ class LibraryService:
                 book_id=entry.book_id,
                 is_in_vault=entry.is_in_vault,
                 created_at=entry.created_at,
-                book_title=entry.book.title,
-                book_description=entry.book.description,
-                book_cover_image_url=entry.book.cover_image_url,
-                author_username=entry.book.author.username,
-                genre=entry.book.genre,
-                tags=entry.book.tags
+                book_title=entry.book.title if entry.book else "Unknown Book",
+                book_description=entry.book.description if entry.book else None,
+                book_cover_image_url=entry.book.cover_image_url if entry.book else None,
+                author_username=entry.book.author.username if entry.book and entry.book.author else "Unknown Author",
+                genre=entry.book.genre if entry.book else None,
+                tags=entry.book.tags if entry.book else None
             )
             for entry in library_entries
+            if entry.book  # Only include entries where the book still exists
         ]
     
     def add_book_to_library(self, user_id: UUID, book_id: UUID) -> dict:
         """Add a book to user's library"""
         library_entry = UserLibrary(
-            user_id=user_id,
-            book_id=book_id,
+            user_id=str(user_id),
+            book_id=str(book_id),
             is_in_vault=False
         )
         
@@ -62,8 +67,8 @@ class LibraryService:
         library_entry = (
             self.db.query(UserLibrary)
             .filter(
-                UserLibrary.user_id == user_id,
-                UserLibrary.book_id == book_id
+                UserLibrary.user_id == str(user_id),
+                UserLibrary.book_id == str(book_id)
             )
             .first()
         )
@@ -81,8 +86,8 @@ class LibraryService:
         library_entry = (
             self.db.query(UserLibrary)
             .filter(
-                UserLibrary.user_id == user_id,
-                UserLibrary.book_id == book_id
+                UserLibrary.user_id == str(user_id),
+                UserLibrary.book_id == str(book_id)
             )
             .first()
         )
@@ -105,7 +110,7 @@ class LibraryService:
             .join(Chapter, Chapter.book_id == Book.id)
             .join(Bookmark, Bookmark.chapter_id == Chapter.id)
             .options(joinedload(Book.author))
-            .filter(Bookmark.user_id == user_id)
+            .filter(Bookmark.user_id == str(user_id))
             .distinct()
         )
         
@@ -115,7 +120,7 @@ class LibraryService:
         current_library = (
             self.db.query(UserLibrary.book_id)
             .filter(
-                UserLibrary.user_id == user_id,
+                UserLibrary.user_id == str(user_id),
                 UserLibrary.is_deleted == False
             )
             .all()
@@ -129,7 +134,7 @@ class LibraryService:
                 self.db.query(Bookmark)
                 .join(Chapter, Chapter.id == Bookmark.chapter_id)
                 .filter(
-                    Bookmark.user_id == user_id,
+                    Bookmark.user_id == str(user_id),
                     Chapter.book_id == book.id
                 )
                 .order_by(Bookmark.updated_at.desc())

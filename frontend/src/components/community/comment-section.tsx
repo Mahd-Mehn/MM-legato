@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { useComments, useCommentCount } from '@/hooks/useComments'
+import { useCommentMutations } from '@/hooks/useMutations'
 import { CommentForm } from './comment-form'
 import { CommentItem } from './comment-item'
 import { Comment } from '@/types/comment'
@@ -18,15 +19,26 @@ interface CommentSectionProps {
 }
 
 export function CommentSection({ chapterId, className }: CommentSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  // Check if URL has comment hash to auto-expand
+  const hasCommentHash = typeof window !== 'undefined' && window.location.hash.startsWith('#comment-')
+  const [isExpanded, setIsExpanded] = useState(hasCommentHash)
   const [showCommentForm, setShowCommentForm] = useState(false)
   const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(true)
   
   const { data: comments, isLoading, error } = useComments(chapterId)
   const { data: commentCountData } = useCommentCount(chapterId)
+  const { createComment, likeComment, deleteComment } = useCommentMutations()
   
   const commentCount = commentCountData?.comment_count || 0
   const hasComments = comments && comments.length > 0
+
+  // Auto-expand when there's a comment hash in URL
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.startsWith('#comment-') && commentCount > 3) {
+      setIsExpanded(true)
+    }
+  }, [commentCount])
 
   if (error) {
     return (

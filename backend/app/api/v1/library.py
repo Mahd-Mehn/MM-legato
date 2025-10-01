@@ -13,12 +13,13 @@ router = APIRouter()
 
 @router.get("/", response_model=List[LibraryResponse])
 async def get_user_library(
+    include_vault: bool = True,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get user's library books"""
     library_service = LibraryService(db)
-    return library_service.get_user_library(current_user.id)
+    return library_service.get_user_library(current_user.id, include_vault=include_vault)
 
 @router.post("/add")
 async def add_book_to_library(
