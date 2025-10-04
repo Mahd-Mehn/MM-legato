@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
+from app.core.database import create_tables
 from app.api.v1.api import api_router
 import cloudinary
 from pathlib import Path
@@ -11,6 +12,11 @@ app = FastAPI(
     description="Social reading and writing platform API",
     version="1.0.0"
 )
+
+# @app.on_event("startup")
+# async def startup_event():
+#     """Initialize database tables on startup"""
+#     create_tables()
 
 # Configure Cloudinary
 if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET:
