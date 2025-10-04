@@ -4,15 +4,29 @@ import { useState, useEffect } from 'react'
 import { BookCard } from '@/components/ui/book-card'
 import { FilterSidebar } from '@/components/explore/filter-sidebar'
 import { Search, Loader2 } from 'lucide-react'
-import { useBooks, useUserSettings } from '@/hooks/useBooks'
+import { useInfiniteBooks, useUserSettings, useUpdateExcludedTags } from '@/hooks/useBooks'
 import { BookFilters } from '@/types/book'
 
 export default function ExplorePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [filters, setFilters] = useState<BookFilters>({})
   
-  const { books, loading, error, pagination, filters, updateFilters, loadMore } = useBooks()
-  const { settings, updateExcludedTags } = useUserSettings()
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading, 
+    error 
+  } = useInfiniteBooks(filters)
+  
+  const { data: settings } = useUserSettings()
+  const updateExcludedTagsMutation = useUpdateExcludedTags()
+
+  // Flatten all pages into a single books array
+  const books = data?.pages.flatMap(page => page.books) || []
+  const totalBooks = data?.pages[0]?.total || 0
 
   // Handle search with debouncing
   const handleSearchChange = (value: string) => {
@@ -23,7 +37,7 @@ export default function ExplorePage() {
     }
     
     const timeout = setTimeout(() => {
-      updateFilters({ search: value || undefined })
+      setFilters(prev => ({ ...prev, search: value || undefined }))
     }, 500)
     
     setSearchTimeout(timeout)
@@ -32,16 +46,29 @@ export default function ExplorePage() {
   // Handle sort change
   const handleSortChange = (value: string) => {
     const [sortBy, sortOrder] = value.split('-')
-    updateFilters({ 
+    setFilters(prev => ({ 
+      ...prev,
       sort_by: sortBy as any, 
       sort_order: sortOrder as 'asc' | 'desc' 
-    })
+    }))
   }
 
   // Handle excluded tags change
   const handleExcludedTagsChange = (excludedTags: string[]) => {
-    updateExcludedTags(excludedTags)
-    updateFilters({ excluded_tags: excludedTags })
+    updateExcludedTagsMutation.mutate(excludedTags)
+    setFilters(prev => ({ ...prev, excluded_tags: excludedTags }))
+  }
+
+  // Handle filter updates
+  const updateFilters = (newFilters: Partial<BookFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }))
+  }
+
+  // Handle load more
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
   }
 
   // Cleanup timeout on unmount
@@ -83,7 +110,7 @@ export default function ExplorePage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {loading ? 'Loading...' : `Showing ${pagination.total} books`}
+              {isLoading ? 'Loading...' : `Showing ${totalBooks} books`}
             </h2>
             <select 
               onChange={(e) => handleSortChange(e.target.value)}
@@ -98,11 +125,11 @@ export default function ExplorePage() {
 
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-6">
-              <p className="text-red-800 dark:text-red-200">{error}</p>
+              <p className="text-red-800 dark:text-red-200">{error.message}</p>
             </div>
           )}
 
-          {loading && books.length === 0 ? (
+          {isLoading && books.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
@@ -128,7 +155,7 @@ export default function ExplorePage() {
                 ))}
               </div>
 
-              {books.length === 0 && !loading && (
+              {books.length === 0 && !isLoading && (
                 <div className="text-center py-12">
                   <p className="text-slate-500 dark:text-slate-400">
                     No books found matching your criteria.
@@ -137,14 +164,14 @@ export default function ExplorePage() {
               )}
 
               {/* Load More */}
-              {pagination.has_next && (
+              {hasNextPage && (
                 <div className="text-center mt-8">
                   <button 
                     onClick={loadMore}
-                    disabled={loading}
+                    disabled={isFetchingNextPage}
                     className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
                   >
-                    {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin" />}
                     Load More Books
                   </button>
                 </div>

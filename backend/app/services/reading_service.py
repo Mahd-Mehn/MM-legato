@@ -366,7 +366,7 @@ class ReadingService:
                     FROM books b 
                     JOIN users u ON REPLACE(b.author_id, '-', '') = REPLACE(u.id, '-', '')
                     WHERE REPLACE(b.id, '-', '') = REPLACE(:book_id, '-', '') 
-                    AND b.is_published = 1
+                    AND b.is_published = true
                 """)
                 
                 book_result = self.db.execute(book_query, {"book_id": progress.book_id}).fetchone()
@@ -377,7 +377,7 @@ class ReadingService:
                 chapter_query = text("""
                     SELECT * FROM chapters 
                     WHERE REPLACE(id, '-', '') = REPLACE(:chapter_id, '-', '') 
-                    AND is_published = 1
+                    AND is_published = true
                 """)
                 
                 chapter_result = self.db.execute(chapter_query, {"chapter_id": progress.chapter_id}).fetchone()

@@ -226,7 +226,7 @@ async def get_dashboard_stats(
                 FROM books b
                 JOIN chapters c ON REPLACE(b.id, '-', '') = REPLACE(c.book_id, '-', '')
                 WHERE REPLACE(b.author_id, '-', '') = REPLACE(:author_id, '-', '') 
-                AND b.is_published = 1 AND c.is_published = 1
+                AND b.is_published = true AND c.is_published = true
             """)
             writer_stats_result = db.execute(writer_stats_query, {"author_id": str(current_user.id)}).scalar()
             # Mock story views based on published content

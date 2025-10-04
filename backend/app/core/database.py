@@ -24,3 +24,24 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Function to create all tables
+def create_tables():
+    """Create all database tables"""
+    try:
+        # Import all models to ensure they're registered with SQLAlchemy
+        from app.models.base import Base
+        from app.models import (
+            User, Book, Chapter, UserLibrary, Bookmark, ReadingProgress,
+            ReadingPreferences, Comment, CommentLike, BookReview, ReviewLike,
+            CommentReport, ModerationLog, Character, Notification, NotificationType,
+            Transaction, BookView, ChapterView, WriterEarnings
+        )
+        
+        print("Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully!")
+        
+    except Exception as e:
+        print(f"Error creating database tables: {e}")
+        raise e

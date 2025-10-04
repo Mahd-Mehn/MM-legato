@@ -4,7 +4,7 @@ import os
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "sqlite:///./legato.db"
+    DATABASE_URL: str = ""
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
